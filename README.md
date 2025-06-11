@@ -1,5 +1,6 @@
+# Conky system monitor settings
 Conky (1.19) config with:
-Dependencies: sudo apt install vnstat lm-sensors curl nvidia-smi
+Dependencies: sudo apt install conky-all vnstat lm-sensors curl nvidia-smi
               sudo sensors-detect
 
 
