@@ -41,7 +41,18 @@ fi
 # Ensure gdown is installed for downloading from Google Drive
 if ! command -v gdown &> /dev/null; then
     echo "gdown is not installed. Installing gdown..."
-    pip install --user gdown || { echo "Failed to install gdown."; exit 1; }
+    if command -v apt-get &> /dev/null; then
+    if ! command -v gdown &> /dev/null && command -v pip &> /dev/null; then
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -Syu python-gdown || { echo "Failed to install gdown."; exit 1; }
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y python3-gdown || { echo "Failed to install gdown."; exit 1; }
+    else
+        echo "Package manager not supported. Please install gdown manually."
+        exit 1
+    fi
     export PATH="$HOME/.local/bin:$PATH"
 else
     echo "gdown is already installed."
