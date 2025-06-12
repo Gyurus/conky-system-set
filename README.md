@@ -1,6 +1,3 @@
-# conkyset.sh is a script to download and set up some conky eyecandy
-# conkyset.sh
-
 **conkyset.sh** is a simple Bash script to automate the installation and setup of Conky with a custom configuration on Linux systems.
 
 ## Features
@@ -8,7 +5,8 @@
 - Installs Conky if not already present
 - Installs required tools (e.g., `wget`, `pip`) — additional dependencies may be required depending on your Linux distribution; check the script for details.
 - Downloads a pre-configured Conky setup archive from Google Drive  
-  *(Google Drive link: [Insert Link Here])*
+  *(Google Drive link:
+  (https://drive.google.com/file/d/1W41kbTgQGQvkqbdRk8Gvw-0yoCqOwVKB/view?usp=drive_link))*
 - Extracts and installs the configuration to `~/.config/conky`
 - Sets up an autostart entry (optional)
 - Optionally runs Conky immediately after setup
