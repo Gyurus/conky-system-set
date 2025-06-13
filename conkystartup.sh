@@ -1,16 +1,29 @@
 #!/bin/bash
+#COnky startup script
+echo "Starting Conky setup..."
 
 # Detect active interface: prefer Ethernet, fallback to Wi-Fi
 iface=$(ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; exit}')
 [ -z "$iface" ] && iface=$(nmcli device status | awk '$3 == "connected" && $2 == "wifi" {print $1; exit}')
+[ -z "$iface" ] && iface=$(nmcli device status | awk '$3 == "connected" {print $1; exit}')
+[ -z "$iface" ] && iface="enp7s0"  # final fallback: replace "enp7s0" with your actual network interface name if different
 [ -z "$iface" ] && iface="enp7s0"  # final fallback (adjust as needed)
 
 # Save the interface
 mkdir -p "$HOME/.config/conky"
 echo "$iface" > "$HOME/.config/conky/.conky_iface"
 
-# Replace @@IFACE@@ in template
-sed "s/@@IFACE@@/$iface/g" "$HOME/.config/conky/conky.template.conf" > "$HOME/.config/conky/conky.conf"
+# Replace @@IFACE@@ i conky.conf
+if [ ! -f "$HOME/.config/conky/conky.conf" ]; then
+  echo "Error: Configuration file $HOME/.config/conky/conky.conf not found."
+  exit 1
+fi
+if [ ! -d "$HOME/.config/conky" ]; then
+  mkdir -p "$HOME/.config/conky"
+fi
+sed -i "s|@@IFACE@@|$iface|g" "$HOME/.config/conky/conky.conf"
+
+
 
 # Remove last line (if ]] exists)
 sed -i '$d' "$HOME/.config/conky/conky.conf"
