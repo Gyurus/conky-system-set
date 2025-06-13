@@ -2,7 +2,7 @@
 
 A dynamic and visually clean Conky setup for monitoring your system’s network activity in real time. Includes auto-configuration for your active network interface, stylish output, and startup automation.
 
-![Screenshot](https://your-image-link-if-any) <!-- Optional: Add a screenshot -->
+[https://postimg.cc/tZr0Hw2X](https://i.postimg.cc/Bb3J2GF1/Screenshot-2025-06-13-20-01-14.png)
 
 ---
 
