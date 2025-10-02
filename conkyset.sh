@@ -7,6 +7,8 @@ show_help() {
     echo "      --no-gpu     Skip GPU detection and installation steps"
     echo "      --auto-location  Auto-detect weather location (skip prompt)"
     echo "      --nosensor   Skip thermal sensor checks and installs"
+    echo "      --position   Window position (top_right, top_left, bottom_right, bottom_left, center)"
+    echo "      --monitor    Force specific monitor by name (e.g., DP-1, HDMI-A-1)"
     echo "      --help       Show this help message and exit"
     exit 0
 }
@@ -16,6 +18,8 @@ NONINTERACTIVE=false
 SKIP_GPU=false
 AUTO_LOCATION=false
 SKIP_SENSOR=false
+POSITION_PREFERENCE="top_right"
+FORCE_MONITOR=""
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -41,6 +45,23 @@ while [[ $# -gt 0 ]]; do
         --nosensor)
             SKIP_SENSOR=true
             echo "   ℹ️  Sensor checks skipped."
+            shift
+            ;;
+        --position)
+            shift
+            if [[ "$1" =~ ^(top_right|top_left|bottom_right|bottom_left|center)$ ]]; then
+                POSITION_PREFERENCE="$1"
+                echo "   ℹ️  Window position set to: $1"
+            else
+                echo "   ⚠️  Invalid position '$1'. Using default: top_right"
+                POSITION_PREFERENCE="top_right"
+            fi
+            shift
+            ;;
+        --monitor)
+            shift
+            FORCE_MONITOR="$1"
+            echo "   ℹ️  Forced monitor: $1"
             shift
             ;;
         *)
@@ -336,25 +357,42 @@ else
     # Show the final location used for weather
     echo "   📍 Weather location set to: $LOCATION"
 
-    # Detect connected monitors and select head
-    MONITOR_INDEX=$(get_monitor_index "$NONINTERACTIVE")
-    echo "   ✅ Selected monitor index: $MONITOR_INDEX"
+    # Detect connected monitors and configure positioning
+    echo "   🔍 Detecting monitors and calculating positioning..."
+    MONITOR_CONFIG=$(get_monitor_config "$NONINTERACTIVE" "$POSITION_PREFERENCE")
+    
+    # Parse the configuration: index:alignment:gap_x:gap_y
+    IFS=':' read -r MONITOR_INDEX ALIGNMENT GAP_X GAP_Y <<< "$MONITOR_CONFIG"
+    
+    echo "   ✅ Monitor configuration:"
+    echo "      Index: $MONITOR_INDEX"
+    echo "      Position: $POSITION_PREFERENCE"
+    echo "      Alignment: $ALIGNMENT"
+    echo "      Gap X: $GAP_X, Gap Y: $GAP_Y"
 
     # Detect active network interface
     echo "   🔍 Detecting active network interface..."
     IFACE=$(get_iface)
     echo "   ✅ Using network interface: $IFACE"
-    # Substitute @@IFACE@@, @@LOCATION@@, and @@MONITOR@@ in the template using '|' as delimiter
+    
+    # Substitute all placeholders in the template using '|' as delimiter
     sed -e "s|@@IFACE@@|${IFACE}|g" \
         -e "s|@@LOCATION@@|${LOCATION}|g" \
         -e "s|@@MONITOR@@|${MONITOR_INDEX}|g" \
+        -e "s|@@ALIGNMENT@@|${ALIGNMENT}|g" \
+        -e "s|@@GAP_X@@|${GAP_X}|g" \
+        -e "s|@@GAP_Y@@|${GAP_Y}|g" \
         conky.template.conf > "$HOME/.config/conky/conky.conf" || { echo "Failed to create conky.conf with substitutions."; exit 1; }
     # Ensure the Lua multiline string is properly closed in conky.conf
     # Check that the last line ends with ']];'
     if ! tail -n 1 "$HOME/.config/conky/conky.conf" | grep -qE '\]\];\s*$'; then
         echo ']];' >> "$HOME/.config/conky/conky.conf"
     fi
-    echo "   ✅ Configuration file created successfully with interface: $IFACE, location: $LOCATION, monitor: $MONITOR_INDEX"
+    echo "   ✅ Configuration file created successfully:"
+    echo "      Interface: $IFACE"
+    echo "      Location: $LOCATION" 
+    echo "      Monitor: $MONITOR_INDEX ($POSITION_PREFERENCE)"
+    echo "      Positioning: $ALIGNMENT at ($GAP_X, $GAP_Y)"
 fi
 # Template copied
 echo "Conky template configuration file copied successfully."

@@ -1,8 +1,6 @@
-# Conky System Monitor v1.6
+# Conky System Monitor v1.7-dev (Multi-Monitor Support)
 
-A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, and complete setup automation.onky System Monitor v1.5
-
-A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, and complete setup automation.
+A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, and complete setup automation.
 
 [https://postimg.cc/tZr0Hw2X](https://i.postimg.cc/Bb3J2GF1/Screenshot-2025-06-13-20-01-14.png)
 
@@ -11,12 +9,15 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
 ## ✨ Features
 
 - **Comprehensive System Monitoring**: CPU, RAM, storage, temperatures, and network
+- **🖥️ Multi-Monitor Support**: Intelligent detection and positioning across multiple displays
+- **📍 Smart Window Positioning**: Auto-calculated positioning based on monitor resolution
+- **🎯 Flexible Placement Options**: Top/bottom, left/right, center positioning on any monitor
 - **Enhanced Process Lists**: 5 top CPU and RAM consuming processes
 - **Smart Temperature Detection**: CPU and system temperature with multiple sensor fallbacks
 - **Network Auto-Detection**: Automatic detection of active network interface (WiFi/Ethernet)
 - **Modern Design**: Transparent panel-style layout with `Roboto Mono` font
 - **Battery Support**: Battery status and time remaining (when available)
-- **Weather Integration**: Current weather information
+- **Weather Integration**: Current weather information with auto-location detection
 - **Public IP Display**: Shows your current public IP address
 - **Complete Automation**: Full setup, startup, and removal scripts
 - **Non-Destructive**: Copy files instead of moving them
@@ -43,11 +44,25 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
 - ✅ Creates autostart entry
 - ✅ Configures all components
 - ✅ Supports multiple Linux distributions
+- 🖥️ **Multi-monitor support with intelligent positioning**
+- 📍 **Resolution-aware window placement**
 
 **Usage:** 
 ```bash
+# Basic interactive setup
 ./conkyset.sh
+
+# Quick setup with options
+./conkyset.sh --yes --position top_left --auto-location
 ```
+
+**Command-line Options:**
+- `-y, --yes` - Non-interactive mode (auto-confirm prompts)
+- `--position` - Window position: top_right, top_left, bottom_right, bottom_left, center
+- `--monitor` - Force specific monitor by name (e.g., DP-1, HDMI-A-1)
+- `--auto-location` - Auto-detect weather location
+- `--no-gpu` - Skip GPU detection
+- `--nosensor` - Skip thermal sensor checks
 
 ### `conkystartup.sh`
 > **Startup script** - Configures network interface and launches Conky.
@@ -93,6 +108,75 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
    ```
 
 3. **Conky will start automatically!** 🎉
+
+---
+
+## 🖥️ Multi-Monitor Support
+
+### Automatic Multi-Monitor Detection
+
+The system automatically detects all connected monitors and provides intelligent positioning options:
+
+```bash
+# Basic setup with interactive monitor selection
+./conkyset.sh
+
+# Non-interactive setup (uses primary monitor)
+./conkyset.sh --yes
+
+# Specify window position
+./conkyset.sh --position top_left
+./conkyset.sh --position bottom_right
+./conkyset.sh --position center
+```
+
+### Available Position Options
+
+| Position | Description |
+|----------|-------------|
+| `top_right` | Top-right corner (default) |
+| `top_left` | Top-left corner |
+| `bottom_right` | Bottom-right corner |
+| `bottom_left` | Bottom-left corner |
+| `center` | Center of the screen |
+
+### Advanced Multi-Monitor Options
+
+```bash
+# Force specific monitor by name
+./conkyset.sh --monitor DP-1
+./conkyset.sh --monitor HDMI-A-1
+
+# Combine options for complex setups
+./conkyset.sh --yes --position bottom_left --monitor DP-2
+
+# Auto-setup with specific positioning
+./conkyset.sh --yes --auto-location --position center
+```
+
+### Monitor Information Display
+
+During setup, the system will show detailed monitor information:
+```
+🖥️ Detected 2 monitor(s):
+
+1. DP-1 (Primary)
+   Resolution: 2560x1440
+   Position: +0+0
+   Size: 2560×1440 pixels
+
+2. HDMI-A-1
+   Resolution: 1920x1080
+   Position: +2560+0
+   Size: 1920×1080 pixels
+```
+
+### How Resolution-Based Positioning Works
+
+- **Automatic Calculations**: Window position is calculated based on monitor resolution
+- **Safe Margins**: 30px margin from edges to prevent window clipping
+- **Multi-Monitor Aware**: Handles monitor offsets in extended desktop setups
+- **Resolution Adaptive**: Adjusts positioning for different monitor sizes
 
 ---
 
