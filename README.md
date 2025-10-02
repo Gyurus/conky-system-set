@@ -1,6 +1,8 @@
-# Conky Network Monitor
+# Conky System Monitor v1.6
 
-A dynamic and visually clean Conky setup for monitoring your system’s network activity in real time. Includes auto-configuration for your active network interface, stylish output, and startup automation.
+A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, and complete setup automation.onky System Monitor v1.5
+
+A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, and complete setup automation.
 
 [https://postimg.cc/tZr0Hw2X](https://i.postimg.cc/Bb3J2GF1/Screenshot-2025-06-13-20-01-14.png)
 
@@ -8,79 +10,192 @@ A dynamic and visually clean Conky setup for monitoring your system’s network 
 
 ## ✨ Features
 
-- Transparent panel-style layout with a modern font (`Roboto Mono`)
-- Live upload/download speeds with graphs
-- Total data sent/received
-- Auto-detection of active network interface
-- Lightweight and desktop-integrated
-- Startup script included
+- **Comprehensive System Monitoring**: CPU, RAM, storage, temperatures, and network
+- **Enhanced Process Lists**: 5 top CPU and RAM consuming processes
+- **Smart Temperature Detection**: CPU and system temperature with multiple sensor fallbacks
+- **Network Auto-Detection**: Automatic detection of active network interface (WiFi/Ethernet)
+- **Modern Design**: Transparent panel-style layout with `Roboto Mono` font
+- **Battery Support**: Battery status and time remaining (when available)
+- **Weather Integration**: Current weather information
+- **Public IP Display**: Shows your current public IP address
+- **Complete Automation**: Full setup, startup, and removal scripts
+- **Non-Destructive**: Copy files instead of moving them
+- **Cross-Platform**: Supports multiple package managers (apt, pacman, dnf)
 
 ---
 
 ## 📁 Files Overview
 
 ### `conky.template.conf`
-
-> Template file for Conky with a placeholder (`@@IFACE@@`) that gets replaced by your actual network interface name.
+> Template configuration file with placeholders that get replaced during setup.
 
 **Includes:**
-- Upload/Download speed and graphs
-- Total sent/received data
-- Uses `Roboto Mono` font
-- Styled with semi-transparent background
+- Network interface placeholder (`@@IFACE@@`)
+- Modern styling with semi-transparent background
+- Roboto Mono font configuration
+
+### `conkyset.sh` 
+> **Main setup script** - Installs and configures the complete Conky system.
+
+**Features:**
+- ✅ Copies all required files (non-destructive)
+- ✅ Installs Conky if not present
+- ✅ Creates autostart entry
+- ✅ Configures all components
+- ✅ Supports multiple Linux distributions
+
+**Usage:** 
+```bash
+./conkyset.sh
+```
+
+### `conkystartup.sh`
+> **Startup script** - Configures network interface and launches Conky.
+
+**Features:**
+- ✅ Auto-detects active network interface
+- ✅ Replaces template placeholders
+- ✅ Generates final configuration
+- ✅ Launches Conky with complete monitoring
+
+**Usage:**
+```bash
+./conkystartup.sh
+```
+
+### `rm-conkyset.sh` 
+> **Removal script** - Completely uninstalls Conky setup.
+
+**Features:**
+- ✅ Stops running Conky processes
+- ✅ Removes all configuration files
+- ✅ Removes autostart entries
+- ✅ Cleans up copied scripts
+- ✅ Provides manual removal instructions
+
+**Usage:**
+```bash
+./rm-conkyset.sh
+```
 
 ---
 
-### `conkyset.sh`
+## 🚀 Quick Installation
 
-> Auto-generates a `conky.conf` file by detecting your active network interface and replacing the `@@IFACE@@` placeholder.
+1. **Make scripts executable:**
+   ```bash
+   chmod +x conkyset.sh conkystartup.sh rm-conkyset.sh
+   ```
 
-**Usage:** 
+2. **Run the setup:**
+   ```bash
+   ./conkyset.sh
+   ```
+
+3. **Conky will start automatically!** 🎉
+
+---
+
+## 📊 System Information Displayed
+
+- **Host Information**: Hostname, uptime, kernel version
+- **Network**: WiFi SSID, signal strength, interface auto-detection
+- **Temperatures**: CPU average temperature and system temperature
+- **CPU/RAM**: Usage percentages with progress bars and graphs
+- **Storage**: Root and home partition usage with bars
+- **Disk I/O**: Real-time read/write speeds with graphs (NVMe optimized)
+- **Top Processes**: 5 highest CPU and RAM consuming processes
+- **Battery**: Status, time remaining, and charge level (when available)
+- **External Data**: Weather information and public IP address
+- **Time/Date**: Formatted date and time display
+
+---
+
+## 🔧 System Requirements
+
+- **Conky**: v1.10 or newer (auto-installed)
+- **Fonts**: Roboto Mono (recommended: `sudo apt install fonts-roboto`)
+- **Sensors**: lm-sensors for temperature monitoring
+- **Network Tools**: iw, nmcli for network detection
+- **Compositor**: Optional for true transparency (e.g., picom)
+- **Operating System**: Linux (tested on various distributions)
+
+---
+
+## 🛠️ Management Commands
+
+### Check if Conky is running:
+```bash
+pgrep conky
+```
+
+### Restart Conky:
+```bash
+pkill conky && ~/conkystartup.sh
+```
+
+### Remove everything:
+```bash
+~/rm-conkyset.sh
+```
+
+### Reinstall:
+```bash
 ./conkyset.sh
-This creates conky.conf, ready for use. - 
+```
 
-conkystartup.sh
-Creates the final congif for conky andlaunches Conky with the generated config.
+---
 
-Usage:
+## 📋 File Locations
 
-./conkystartup.sh
+After installation, files are located at:
+- **Configuration**: `~/.config/conky/conky.conf`
+- **Interface Cache**: `~/.config/conky/.conky_iface`
+- **Autostart Entry**: `~/.config/autostart/conky.desktop`
+- **Startup Script**: `~/conkystartup.sh`
+- **Removal Script**: `~/rm-conkyset.sh`
 
-It will:
+---
 
-Kill existing Conky instances (optional, depending on how it's written).
+## 🗒️ What's New in v1.6
 
-Set up the configuration.
+- **🌍 Enhanced Weather Location Setup**: Auto-detection with smart fallbacks and improved user prompts
+- **📍 Improved Location Validation**: 2 full manual attempts before fallback to detected location
+- **🌦️ Advanced Weather Reporting**: Comprehensive weather data with current conditions, forecasts, and sun times
+- **🛡️ Better Error Handling**: Robust syntax error fixes and improved Conky configuration parsing
+- **⚙️ Hardware Detection**: Enhanced GPU, thermal sensor, and hardware monitoring capabilities
+- **🔧 Setup Script Improvements**: Better command-line options (--no-gpu, --nosensor, --auto-location)
+- **💻 Brightness Monitoring**: Dynamic backlight detection across different hardware interfaces
+- **📦 Dependency Management**: Smarter package installation and hardware-specific optimizations
 
-Launch Conky.
+---
 
-🚀 Installation
-Make the scripts executable:
+## 🗒️ Previous Versions
 
-chmod +x conkyset.sh conkystartup.sh
+### v1.5
+- Added non-interactive `-y/--yes` flag to `conkyset.sh` for auto-default mode
+- Improved monitor detection: use numeric `xinerama_head` index for robust positioning
+- Enhanced process killing with `pkill -x` and safe fallback to avoid miskills
+- Updated removal script to continue cleanup even if Conky processes do not terminate
 
-Run the startup script:
+---
 
-./conkystartup.sh
+## 📌 Notes
 
-🖼️ Requirements
-Conky v1.10 or newer
+- **Distribution Support**: Supports Ubuntu/Debian (apt), Arch (pacman), and Fedora (dnf)
+- **Non-Destructive**: Original files remain in project directory
+- **Reusable**: Can be run multiple times safely
+- **Temperature Monitoring**: Includes fallbacks for various sensor types
+- **Network Flexibility**: Works with both wired and wireless interfaces
+- **Auto-Start**: Configures automatic startup on login
 
-Roboto Mono font (sudo apt install fonts-roboto-fontface)
+---
 
-Compositor (e.g., picom) for true transparency
+## 🧑‍💻 License
 
-bash
-
-📌 Notes
-Designed for Linux desktops (tested on Linux Mint)
-
-Customize conky.template.conf for additional stats (CPU, RAM, weather, etc.)
-
-Works for both wired and wireless interfaces
-
-🧑‍💻 License
 MIT License — free for personal and commercial use. Attribution appreciated but not required.
+
+**Created by Gyurus** - Have fun! 🎉
 
 
 
