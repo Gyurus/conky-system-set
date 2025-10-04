@@ -364,6 +364,14 @@ else
     # Parse the configuration: index:alignment:gap_x:gap_y
     IFS=':' read -r MONITOR_INDEX ALIGNMENT GAP_X GAP_Y <<< "$MONITOR_CONFIG"
     
+    # Debug: check if parsing was successful
+    if [[ -z "$MONITOR_INDEX" || -z "$ALIGNMENT" || -z "$GAP_X" || -z "$GAP_Y" ]]; then
+        echo "   ❌ Error: Failed to parse monitor configuration"
+        echo "   Raw config: '$MONITOR_CONFIG'"
+        echo "   Parsed: Index='$MONITOR_INDEX' Alignment='$ALIGNMENT' Gap_X='$GAP_X' Gap_Y='$GAP_Y'"
+        exit 1
+    fi
+    
     echo "   ✅ Monitor configuration:"
     echo "      Index: $MONITOR_INDEX"
     echo "      Position: $POSITION_PREFERENCE"
@@ -375,13 +383,21 @@ else
     IFACE=$(get_iface)
     echo "   ✅ Using network interface: $IFACE"
     
-    # Substitute all placeholders in the template using '|' as delimiter
-    sed -e "s|@@IFACE@@|${IFACE}|g" \
-        -e "s|@@LOCATION@@|${LOCATION}|g" \
-        -e "s|@@MONITOR@@|${MONITOR_INDEX}|g" \
-        -e "s|@@ALIGNMENT@@|${ALIGNMENT}|g" \
-        -e "s|@@GAP_X@@|${GAP_X}|g" \
-        -e "s|@@GAP_Y@@|${GAP_Y}|g" \
+    # Substitute all placeholders in the template using safe escaping
+    # First escape any special characters in the variables
+    IFACE_ESCAPED=$(printf '%s\n' "$IFACE" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    LOCATION_ESCAPED=$(printf '%s\n' "$LOCATION" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    MONITOR_INDEX_ESCAPED=$(printf '%s\n' "$MONITOR_INDEX" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    ALIGNMENT_ESCAPED=$(printf '%s\n' "$ALIGNMENT" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    GAP_X_ESCAPED=$(printf '%s\n' "$GAP_X" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    GAP_Y_ESCAPED=$(printf '%s\n' "$GAP_Y" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    
+    sed -e "s|@@IFACE@@|${IFACE_ESCAPED}|g" \
+        -e "s|@@LOCATION@@|${LOCATION_ESCAPED}|g" \
+        -e "s|@@MONITOR@@|${MONITOR_INDEX_ESCAPED}|g" \
+        -e "s|@@ALIGNMENT@@|${ALIGNMENT_ESCAPED}|g" \
+        -e "s|@@GAP_X@@|${GAP_X_ESCAPED}|g" \
+        -e "s|@@GAP_Y@@|${GAP_Y_ESCAPED}|g" \
         conky.template.conf > "$HOME/.config/conky/conky.conf" || { echo "Failed to create conky.conf with substitutions."; exit 1; }
     # Ensure the Lua multiline string is properly closed in conky.conf
     # Check that the last line ends with ']];'

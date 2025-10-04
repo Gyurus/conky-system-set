@@ -182,8 +182,8 @@ calculate_position() {
                 ;;
         esac
         
-        # Override alignment for multi-monitor to use absolute positioning
-        alignment="none"
+        # For multi-monitor setups, use top_left with absolute positioning
+        alignment="top_left"
     fi
     
     echo "$alignment:$gap_x:$gap_y"
@@ -226,7 +226,7 @@ get_monitor_config() {
             echo "   ❓ Please select a monitor for Conky display:" >&2
             for i in "${!MONITOR_NAMES[@]}"; do
                 local name="${MONITOR_NAMES[$i]}"
-                local resolution="${MONITOR_INFO[${name}_resolution]}"
+                local resolution="${MONITOR_INFO["${name}_resolution"]:-unknown}"
                 local is_primary=""
                 if [[ "${MONITOR_INFO[primary]:-}" == "$name" ]]; then
                     is_primary=" (Primary)"
@@ -239,7 +239,8 @@ get_monitor_config() {
                 default_choice=$((${MONITOR_INFO[primary_index]} + 1))
             fi
             
-            read -p "   Enter monitor number [$default_choice]: " choice
+            echo -n "   Enter monitor number [$default_choice]: " >&2
+            read choice
             if [[ "$choice" =~ ^[1-9][0-9]*$ ]] && [[ "$choice" -le "$count" ]]; then
                 selected_index=$((choice-1))
             else
