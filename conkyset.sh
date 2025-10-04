@@ -9,6 +9,9 @@ show_help() {
     echo "      --nosensor   Skip thermal sensor checks and installs"
     echo "      --position   Window position (top_right, top_left, bottom_right, bottom_left, center)"
     echo "      --monitor    Force specific monitor by name (e.g., DP-1, HDMI-A-1)"
+    echo "      --check-updates    Check for updates and prompt user"
+    echo "      --force-update-check  Force update check regardless of interval"
+    echo "      --skip-update-check   Skip automatic update check"
     echo "      --help       Show this help message and exit"
     exit 0
 }
@@ -20,6 +23,9 @@ AUTO_LOCATION=false
 SKIP_SENSOR=false
 POSITION_PREFERENCE="top_right"
 FORCE_MONITOR=""
+CHECK_UPDATES_ONLY=false
+FORCE_UPDATE_CHECK=false
+SKIP_UPDATE_CHECK=false
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -64,11 +70,49 @@ while [[ $# -gt 0 ]]; do
             echo "   ℹ️  Forced monitor: $1"
             shift
             ;;
+        --check-updates)
+            CHECK_UPDATES_ONLY=true
+            echo "   ℹ️  Update check mode enabled."
+            shift
+            ;;
+        --force-update-check)
+            FORCE_UPDATE_CHECK=true
+            echo "   ℹ️  Forced update check enabled."
+            shift
+            ;;
+        --skip-update-check)
+            SKIP_UPDATE_CHECK=true
+            echo "   ℹ️  Automatic update check disabled."
+            shift
+            ;;
         *)
             break
             ;;
     esac
 done
+
+# Load modules early for update check
+source "$(dirname "$0")/modules/update.sh"
+
+# Handle update check options
+if [[ "$CHECK_UPDATES_ONLY" == true ]]; then
+    echo "🔍 Checking for updates..."
+    echo "════════════════════════════"
+    update_check_cli --force
+    exit 0
+fi
+
+# Perform automatic update check (unless skipped)
+if [[ "$SKIP_UPDATE_CHECK" != true ]]; then
+    echo "🔍 Checking for updates..."
+    if [[ "$FORCE_UPDATE_CHECK" == true ]]; then
+        check_for_updates "true" "$NONINTERACTIVE"
+    else
+        check_for_updates "false" "$NONINTERACTIVE"
+    fi
+    echo ""
+fi
+
 # linux
 # Start prechecks
 echo "╔══════════════════════════════════════════════════════════════╗"
@@ -85,6 +129,7 @@ source "$(dirname "$0")/modules/monitor.sh"
 source "$(dirname "$0")/modules/iface.sh"
 source "$(dirname "$0")/modules/weather.sh"
 source "$(dirname "$0")/modules/gpu.sh"
+# Note: update.sh is loaded earlier for --check-updates option
 
 # Kill any existing Conky processes
 kill_conky

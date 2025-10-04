@@ -63,6 +63,9 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
 - `--auto-location` - Auto-detect weather location
 - `--no-gpu` - Skip GPU detection
 - `--nosensor` - Skip thermal sensor checks
+- `--check-updates` - Check for updates and prompt user
+- `--force-update-check` - Force update check regardless of interval
+- `--skip-update-check` - Skip automatic update check
 
 ### `conkystartup.sh`
 > **Startup script** - Configures network interface and launches Conky.
@@ -177,6 +180,63 @@ During setup, the system will show detailed monitor information:
 - **Safe Margins**: 30px margin from edges to prevent window clipping
 - **Multi-Monitor Aware**: Handles monitor offsets in extended desktop setups
 - **Resolution Adaptive**: Adjusts positioning for different monitor sizes
+
+---
+
+## 🔄 Automatic Updates
+
+The system includes intelligent update checking to keep your Conky setup current.
+
+### Update Check Features
+
+- **Automatic Checking**: Checks for updates every 24 hours
+- **Version Skipping**: Option to skip specific versions you don't want
+- **Smart Prompting**: Only prompts when updates are actually available
+- **Git Integration**: Automatic updates if installed via git
+- **Manual Override**: Force checks or disable automatic checking
+
+### Update Commands
+
+```bash
+# Check for updates manually
+./conkyset.sh --check-updates
+
+# Force update check (ignore 24h interval)
+./conkyset.sh --force-update-check
+
+# Skip automatic update check during setup
+./conkyset.sh --skip-update-check --yes
+
+# Normal setup with automatic update check
+./conkyset.sh
+```
+
+### Update Process Flow
+
+When an update is detected, you'll see:
+
+```
+🎉 New version available: v1.8.0
+
+🔄 Update Options:
+==================
+
+1. Update now (recommended)
+2. Skip this version
+3. Remind me later
+4. Show release notes
+
+❓ What would you like to do? [1]:
+```
+
+### Update Behaviors
+
+| Option | Behavior |
+|--------|----------|
+| **Update now** | Downloads and installs the latest version |
+| **Skip this version** | Never prompts for this specific version again |
+| **Remind me later** | Asks again in 24 hours |
+| **Show release notes** | Displays changelog and returns to menu |
 
 ---
 
