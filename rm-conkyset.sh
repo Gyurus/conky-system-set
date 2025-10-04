@@ -12,7 +12,38 @@ BACKUP_ENABLED=true
 # Color codes for better output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
+YELLOW='\echo ""
+echo "🔄 Processing autostart entries..."
+safe_remove "$HOME/.config/autostart/conky.desktop" "Autostart entry" || ((removal_errors++))
+
+# Check if autostart directory is now empty and was likely created for conky
+if [ -d "$HOME/.config/autostart" ]; then
+    local autostart_file_count=$(find "$HOME/.config/autostart" -type f | wc -l)
+    if [ "$autostart_file_count" -eq 0 ]; then
+        if [ "$DRY_RUN" = true ]; then
+            print_status "info" "DRY RUN: Autostart directory is empty, would consider removing"
+        elif [ "$FORCE_REMOVAL" = false ]; then
+            echo ""
+            read -p "   ❓ Autostart directory is empty. Remove it? (y/N): " confirm_autostart_dir
+            if [[ "$confirm_autostart_dir" =~ ^[Yy]$ ]]; then
+                if rmdir "$HOME/.config/autostart" 2>/dev/null; then
+                    print_status "success" "Empty autostart directory removed"
+                else
+                    print_status "warning" "Could not remove autostart directory"
+                fi
+            else
+                print_status "info" "Keeping empty autostart directory (user choice)"
+            fi
+        else
+            # Force removal - remove if empty
+            if rmdir "$HOME/.config/autostart" 2>/dev/null; then
+                print_status "success" "Empty autostart directory removed"
+            fi
+        fi
+    else
+        print_status "info" "Autostart directory contains $autostart_file_count other file(s), keeping"
+    fi
+fi[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
@@ -71,25 +102,105 @@ safe_remove_dir() {
         return 0
     fi
     
-    # Check if directory is empty or contains only our files
-    local file_count=$(find "$dir_path" -type f | wc -l)
+    # Check directory contents more intelligently
+    local total_files=$(find "$dir_path" -type f | wc -l)
+    local conky_files=$(find "$dir_path" -type f \( -name "conky.conf" -o -name ".conky_*" \) | wc -l)
+    local other_files=$((total_files - conky_files))
     
-    if [ "$file_count" -gt 0 ]; then
-        print_status "warning" "$description: Contains $file_count file(s), keeping directory"
-        return 0
-    fi
-    
-    if [ "$DRY_RUN" = true ]; then
-        print_status "info" "DRY RUN: Would remove empty directory $dir_path"
-        return 0
-    fi
-    
-    if rmdir "$dir_path" 2>/dev/null; then
-        print_status "success" "$description: Empty directory removed"
+    if [ "$total_files" -eq 0 ]; then
+        # Directory is empty
+        if [ "$DRY_RUN" = true ]; then
+            print_status "info" "DRY RUN: Would remove empty directory $dir_path"
+            return 0
+        fi
+        
+        if rmdir "$dir_path" 2>/dev/null; then
+            print_status "success" "$description: Empty directory removed"
+            return 0
+        else
+            print_status "warning" "$description: Could not remove empty directory"
+            return 1
+        fi
+    elif [ "$other_files" -gt 0 ]; then
+        # Directory contains non-conky files
+        print_status "warning" "$description: Contains $other_files non-conky file(s), keeping directory"
+        
+        # Still try to remove any remaining conky files
+        if [ "$conky_files" -gt 0 ]; then
+            if [ "$DRY_RUN" = true ]; then
+                print_status "info" "DRY RUN: Would remove $conky_files remaining conky file(s)"
+            else
+                find "$dir_path" -type f \( -name "conky.conf" -o -name ".conky_*" \) -delete 2>/dev/null
+                print_status "info" "$description: Removed $conky_files remaining conky file(s)"
+            fi
+        fi
         return 0
     else
-        print_status "warning" "$description: Could not remove directory"
-        return 1
+        # Directory contains only conky files - safe to remove completely
+        if [ "$DRY_RUN" = true ]; then
+            print_status "info" "DRY RUN: Would remove directory $dir_path (contains only $conky_files conky file(s))"
+            return 0
+        fi
+        
+        if rm -rf "$dir_path" 2>/dev/null; then
+            print_status "success" "$description: Directory removed (contained only conky files)"
+            return 0
+        else
+            print_status "warning" "$description: Could not remove directory"
+            return 1
+        fi
+    fi
+}
+
+# Function to clean up backup files
+clean_backup_files() {
+    local backup_count=0
+    local removed_count=0
+    
+    echo "🧹 Checking for backup files created by conky installation..."
+    
+    # Find backup files in common locations
+    for pattern in \
+        "$HOME/.config/"*.*.backup \
+        "$HOME/"conkystartup.sh.*.backup \
+        "$HOME/"rm-conkyset.sh.*.backup; do
+        
+        for backup_file in $pattern; do
+            # Check if file exists and matches our backup pattern
+            if [ -f "$backup_file" ] && [[ "$backup_file" =~ \.[0-9]{8}_[0-9]{6}\.backup$ ]]; then
+                ((backup_count++))
+                
+                local description="Backup file: $(basename "$backup_file")"
+                
+                if [ "$DRY_RUN" = true ]; then
+                    print_status "info" "DRY RUN: Would remove $backup_file"
+                else
+                    if [ "$FORCE_REMOVAL" = false ]; then
+                        echo ""
+                        read -p "   ❓ Remove backup file $(basename "$backup_file")? (y/N): " confirm_backup_removal
+                        if [[ ! "$confirm_backup_removal" =~ ^[Yy]$ ]]; then
+                            print_status "info" "$description: Kept (user choice)"
+                            continue
+                        fi
+                    fi
+                    
+                    if rm -f "$backup_file" 2>/dev/null; then
+                        print_status "success" "$description: Removed"
+                        ((removed_count++))
+                    else
+                        print_status "error" "$description: Failed to remove"
+                    fi
+                fi
+            fi
+        done
+    done
+    
+    if [ "$backup_count" -eq 0 ]; then
+        print_status "info" "No backup files found"
+    elif [ "$DRY_RUN" = true ]; then
+        print_status "info" "DRY RUN: Found $backup_count backup file(s)"
+    else
+        print_status "success" "Processed $backup_count backup file(s), removed $removed_count"
     fi
 }
 
@@ -188,14 +299,22 @@ show_removal_summary() {
     echo "   Configuration:"
     echo "   • ~/.config/conky/conky.conf"
     echo "   • ~/.config/conky/.conky_iface"
-    echo "   • ~/.config/conky/ (if empty)"
+    echo "   • ~/.config/conky/ (if empty or contains only conky files)"
     echo ""
     echo "   Autostart:"
     echo "   • ~/.config/autostart/conky.desktop"
+    echo "   • ~/.config/autostart/ (if empty after cleanup)"
     echo ""
     echo "   Scripts:"
     echo "   • ~/conkystartup.sh"
     echo "   • ~/rm-conkyset.sh (this script)"
+    echo ""
+    echo "   Update System:"
+    echo "   • ~/.conky-system-set-skip-version"
+    echo "   • ~/.conky-system-set-last-check"
+    echo ""
+    echo "   Backup Files:"
+    echo "   • *.YYYYMMDD_HHMMSS.backup files (optional cleanup)"
     echo ""
     
     if [ "$BACKUP_ENABLED" = true ]; then
@@ -337,16 +456,21 @@ echo ""
 echo "📜 Processing scripts..."
 safe_remove "$HOME/conkystartup.sh" "Startup script" || ((removal_errors++))
 
-# Remove this script last
+echo ""
+echo "🔧 Processing update system files..."
+safe_remove "$HOME/.conky-system-set-skip-version" "Update skip version file" || ((removal_errors++))
+safe_remove "$HOME/.conky-system-set-last-check" "Update check timestamp file" || ((removal_errors++))
+
+echo ""
+clean_backup_files
+
+# Remove this script last with safer method
 if [ "$DRY_RUN" = false ]; then
     echo ""
-    print_status "info" "Removing this script in 3 seconds..."
-    sleep 1
-    print_status "info" "2..."
-    sleep 1
-    print_status "info" "1..."
-    sleep 1
-    safe_remove "$HOME/rm-conkyset.sh" "Removal script (this file)"
+    print_status "info" "Scheduling removal of this script..."
+    # Create a safe self-removal command that runs after this script exits
+    (sleep 2; rm -f "$HOME/rm-conkyset.sh" 2>/dev/null) &
+    print_status "info" "Removal script will be deleted in 2 seconds after completion"
 fi
 
 echo ""
