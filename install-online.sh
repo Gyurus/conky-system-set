@@ -12,6 +12,13 @@ INSTALL_DIR="$HOME/.conky-system-set"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}"
 GITHUB_API_URL="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}"
 
+# Check if running from local repo (for testing)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL_MODE=false
+if [ -f "$SCRIPT_DIR/conkyset.sh" ] && [ -f "$SCRIPT_DIR/conky.template.conf" ]; then
+    LOCAL_MODE=true
+fi
+
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,6 +33,12 @@ print_header() {
     echo "║        Conky System Set - Online Installer v1.8             ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
+    
+    if [ "$LOCAL_MODE" = true ]; then
+        print_info "🔧 LOCAL MODE: Running from repository directory"
+        print_info "Files will be copied locally (for testing)"
+        echo ""
+    fi
 }
 
 print_success() {
@@ -92,12 +105,38 @@ download_file() {
     local output="$2"
     local description="${3:-file}"
     
+    # If in local mode, copy from local directory
+    if [ "$LOCAL_MODE" = true ]; then
+        local relative_path="${url##*/}"
+        local local_file="$SCRIPT_DIR/$relative_path"
+        
+        # Handle subdirectories (e.g., modules/update.sh)
+        if [[ "$url" == *"/modules/"* ]]; then
+            relative_path="modules/${url##*/modules/}"
+            local_file="$SCRIPT_DIR/$relative_path"
+        fi
+        
+        if [ -f "$local_file" ]; then
+            cp "$local_file" "$output" 2>/dev/null && return 0
+        fi
+        
+        print_warning "Local file not found: $local_file, trying online..."
+    fi
+    
+    # Try online download
     if command_exists curl; then
         if curl -fsSL "$url" -o "$output" 2>/dev/null; then
             return 0
         else
-            print_error "Failed to download $description from $url"
-            return 1
+            local http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null)
+            if [ "$http_code" = "404" ]; then
+                print_error "File not found on GitHub (404): $description"
+                print_info "The file may not be pushed to GitHub yet"
+                return 1
+            else
+                print_error "Failed to download $description (HTTP $http_code)"
+                return 1
+            fi
         fi
     elif command_exists wget; then
         if wget -q "$url" -O "$output" 2>/dev/null; then
