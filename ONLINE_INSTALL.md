@@ -182,6 +182,31 @@ ls -la ~/.conky-system-set/
 
 ## Troubleshooting
 
+### Modules Not Found Error
+If you see errors like:
+```
+/home/user/conkyset.sh: line 130: /home/user/modules/weather.sh: No such file or directory
+/home/user/conkyset.sh: line 131: /home/user/modules/gpu.sh: No such file or directory
+```
+
+**Cause**: Scripts were copied to home directory instead of symlinked, breaking module paths.
+
+**Solution**:
+```bash
+# Remove copied scripts
+rm ~/conkyset.sh ~/conkystartup.sh ~/rm-conkyset.sh
+
+# Create proper symlinks
+ln -sf ~/.conky-system-set/conkyset.sh ~/conkyset.sh
+ln -sf ~/.conky-system-set/conkystartup.sh ~/conkystartup.sh
+ln -sf ~/.conky-system-set/rm-conkyset.sh ~/rm-conkyset.sh
+
+# Or run from installation directory
+~/.conky-system-set/conkyset.sh
+```
+
+**Prevention**: Always choose option 1 (symlinks) during installation.
+
 ### Download Fails
 If downloads fail:
 1. Check internet connection
@@ -309,11 +334,11 @@ This includes test scripts, documentation, etc. (y/N): n
 
 ▶ Setting up quick access...
 How would you like to access the scripts?
-  1. Copy scripts to home directory (default)
-  2. Create symlinks in home directory
+  1. Create symlinks in home directory (recommended)
+  2. Copy scripts to home directory (not recommended)
   3. Skip (access from install directory only)
 Choice [1]: 1
-✅ Scripts copied to /home/user
+✅ Symlinks created in /home/user
 
 ╔══════════════════════════════════════════════════════════════╗
 ║              INSTALLATION COMPLETE!                          ║

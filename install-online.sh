@@ -296,32 +296,44 @@ setup_home_links() {
     
     echo ""
     echo "How would you like to access the scripts?"
-    echo "  1. Copy scripts to home directory (default)"
-    echo "  2. Create symlinks in home directory"
+    echo "  1. Create symlinks in home directory (recommended)"
+    echo "  2. Copy scripts to home directory (not recommended)"
     echo "  3. Skip (access from install directory only)"
     echo -n "Choice [1]: "
     read setup_choice
     
     case "$setup_choice" in
         2)
-            # Create symlinks
-            print_info "Creating symlinks..."
-            ln -sf "$INSTALL_DIR/conkyset.sh" "$HOME/conkyset.sh"
-            ln -sf "$INSTALL_DIR/conkystartup.sh" "$HOME/conkystartup.sh"
-            ln -sf "$INSTALL_DIR/rm-conkyset.sh" "$HOME/rm-conkyset.sh"
-            print_success "Symlinks created in $HOME"
-            ;;
-        3)
-            print_info "Skipping home directory setup"
-            ;;
-        *)
-            # Copy files (default)
+            # Copy files
+            print_warning "⚠️  WARNING: Copying breaks module loading!"
+            print_warning "Modules directory will not be accessible"
+            echo -n "Are you sure? (y/N): "
+            read confirm_copy
+            if [[ ! "$confirm_copy" =~ ^[Yy]$ ]]; then
+                print_info "Switching to symlinks instead..."
+                ln -sf "$INSTALL_DIR/conkyset.sh" "$HOME/conkyset.sh"
+                ln -sf "$INSTALL_DIR/conkystartup.sh" "$HOME/conkystartup.sh"
+                ln -sf "$INSTALL_DIR/rm-conkyset.sh" "$HOME/rm-conkyset.sh"
+                print_success "Symlinks created in $HOME"
+                return
+            fi
             print_info "Copying scripts to home directory..."
             cp "$INSTALL_DIR/conkyset.sh" "$HOME/conkyset.sh"
             cp "$INSTALL_DIR/conkystartup.sh" "$HOME/conkystartup.sh"
             cp "$INSTALL_DIR/rm-conkyset.sh" "$HOME/rm-conkyset.sh"
             chmod +x "$HOME/conkyset.sh" "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh"
-            print_success "Scripts copied to $HOME"
+            print_warning "Scripts copied to $HOME (modules will not work)"
+            ;;
+        3)
+            print_info "Skipping home directory setup"
+            ;;
+        *)
+            # Create symlinks (default and recommended)
+            print_info "Creating symlinks..."
+            ln -sf "$INSTALL_DIR/conkyset.sh" "$HOME/conkyset.sh"
+            ln -sf "$INSTALL_DIR/conkystartup.sh" "$HOME/conkystartup.sh"
+            ln -sf "$INSTALL_DIR/rm-conkyset.sh" "$HOME/rm-conkyset.sh"
+            print_success "Symlinks created in $HOME"
             ;;
     esac
 }
