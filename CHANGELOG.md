@@ -5,6 +5,38 @@ All notable changes to Conky System Set are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2025-10-05
+
+### Added
+- **Comprehensive Previous Installation Detection**: New intelligent cleanup system
+- Automatically detects all components of previous installations before starting
+- Single confirmation to remove all previous installation components
+- Optional preservation of configuration directory (~/.conky)
+
+### Changed
+- **Improved Installation Flow**: Streamlined cleanup process
+- Shows clear list of found components before removal
+- Automatic termination of running Conky processes
+- Removes both file-based and symlink-based installations
+- Cleans up autostart entries (both old and new locations)
+- Removes update tracking files
+
+### Detection Capabilities
+The installer now checks for:
+- Installation directory (~/.conky-system-set)
+- Home directory scripts (~/conkyset.sh, ~/conkystartup.sh, ~/rm-conkyset.sh)
+- Configuration directory (~/.conky)
+- Running Conky processes
+- Autostart entries (both locations)
+- Update check files
+
+### User Experience
+- Clear display of what will be removed
+- Single prompt instead of multiple questions
+- Option to preserve configuration
+- Safer cleanup with proper handling of symlinks
+- Better feedback during cleanup process
+
 ## [1.8.3] - 2025-10-05
 
 ### Fixed
