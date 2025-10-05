@@ -295,6 +295,128 @@ set_permissions() {
     print_success "Permissions set"
 }
 
+# Check and clean previous installation
+check_previous_installation() {
+    print_step "Checking for previous installation..."
+    
+    local found_items=()
+    local cleanup_needed=false
+    
+    # Check installation directory
+    if [ -d "$INSTALL_DIR" ]; then
+        found_items+=("Installation directory: $INSTALL_DIR")
+        cleanup_needed=true
+    fi
+    
+    # Check home directory scripts
+    if [ -f "$HOME/conkyset.sh" ] || [ -L "$HOME/conkyset.sh" ]; then
+        found_items+=("Script: ~/conkyset.sh")
+        cleanup_needed=true
+    fi
+    
+    if [ -f "$HOME/conkystartup.sh" ] || [ -L "$HOME/conkystartup.sh" ]; then
+        found_items+=("Script: ~/conkystartup.sh")
+        cleanup_needed=true
+    fi
+    
+    if [ -f "$HOME/rm-conkyset.sh" ] || [ -L "$HOME/rm-conkyset.sh" ]; then
+        found_items+=("Script: ~/rm-conkyset.sh")
+        cleanup_needed=true
+    fi
+    
+    # Check .conky directory
+    if [ -d "$HOME/.conky" ]; then
+        found_items+=("Config directory: ~/.conky")
+        cleanup_needed=true
+    fi
+    
+    # Check running Conky processes
+    if pgrep -x conky > /dev/null 2>&1; then
+        found_items+=("Running Conky processes")
+        cleanup_needed=true
+    fi
+    
+    # Check autostart
+    local autostart_file=""
+    if [ -f "$HOME/.config/autostart/conky.desktop" ]; then
+        found_items+=("Autostart: ~/.config/autostart/conky.desktop")
+        autostart_file="$HOME/.config/autostart/conky.desktop"
+        cleanup_needed=true
+    elif [ -f "$HOME/.config/autostart/conkystartup.desktop" ]; then
+        found_items+=("Autostart: ~/.config/autostart/conkystartup.desktop")
+        autostart_file="$HOME/.config/autostart/conkystartup.desktop"
+        cleanup_needed=true
+    fi
+    
+    if [ "$cleanup_needed" = false ]; then
+        print_success "No previous installation found"
+        return 0
+    fi
+    
+    # Show what was found
+    print_warning "Previous installation detected:"
+    echo ""
+    for item in "${found_items[@]}"; do
+        echo "   • $item"
+    done
+    echo ""
+    
+    echo -n "Remove previous installation and continue? (Y/n): "
+    read remove_prev
+    
+    if [[ "$remove_prev" =~ ^[Nn]$ ]]; then
+        print_info "Installation cancelled"
+        exit 0
+    fi
+    
+    # Perform cleanup
+    print_info "Removing previous installation..."
+    
+    # Stop Conky processes
+    if pgrep -x conky > /dev/null 2>&1; then
+        echo "   Stopping Conky processes..."
+        pkill -x conky 2>/dev/null || killall conky 2>/dev/null || true
+        sleep 1
+    fi
+    
+    # Remove scripts (files and symlinks)
+    echo "   Removing scripts..."
+    rm -f "$HOME/conkyset.sh" "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" 2>/dev/null || true
+    
+    # Remove installation directory
+    if [ -d "$INSTALL_DIR" ]; then
+        echo "   Removing installation directory..."
+        rm -rf "$INSTALL_DIR" 2>/dev/null || true
+    fi
+    
+    # Remove .conky directory (ask for confirmation)
+    if [ -d "$HOME/.conky" ]; then
+        echo -n "   Remove configuration directory ~/.conky? (y/N): "
+        read remove_config
+        if [[ "$remove_config" =~ ^[Yy]$ ]]; then
+            rm -rf "$HOME/.conky" 2>/dev/null || true
+            echo "   Configuration directory removed"
+        else
+            echo "   Configuration directory kept"
+        fi
+    fi
+    
+    # Remove autostart
+    if [ -n "$autostart_file" ] && [ -f "$autostart_file" ]; then
+        echo "   Removing autostart entry..."
+        rm -f "$autostart_file" 2>/dev/null || true
+    fi
+    
+    # Remove update check file
+    rm -f "$HOME/.conky-system-set-last-check" 2>/dev/null || true
+    rm -f "$HOME/.conky-system-set-skip-version" 2>/dev/null || true
+    
+    print_success "Previous installation removed successfully"
+    echo ""
+    
+    return 0
+}
+
 # Create symlinks or copy to home directory
 setup_home_links() {
     print_step "Setting up quick access..."
@@ -394,18 +516,8 @@ main() {
     echo "Install location: $INSTALL_DIR"
     echo ""
     
-    # Check if already installed
-    if [ -d "$INSTALL_DIR" ]; then
-        print_warning "Installation directory already exists: $INSTALL_DIR"
-        echo -n "Overwrite existing installation? (y/N): "
-        read overwrite
-        if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
-            print_info "Installation cancelled"
-            exit 0
-        fi
-        print_info "Removing existing installation..."
-        rm -rf "$INSTALL_DIR"
-    fi
+    # Check and clean previous installation
+    check_previous_installation
     
     echo -n "Continue with installation? (Y/n): "
     read confirm
