@@ -1,13 +1,41 @@
-# Conky System Monitor v1.7-dev (Multi-Monitor Support)
+# Conky System Monitor v1.8 (Multi-Monitor Support)
 
-A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, and complete setup automation.
+A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, complete setup automation, and **one-command online installation**.
 
 [https://postimg.cc/tZr0Hw2X](https://i.postimg.cc/Bb3J2GF1/Screenshot-2025-06-13-20-01-14.png)
 
 ---
 
+## 🚀 Quick Installation
+
+### Online Installation (Recommended)
+
+Install directly from GitHub with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Gyurus/conky-system-set/main/install-online.sh | bash
+```
+
+Or using wget:
+```bash
+wget -qO- https://raw.githubusercontent.com/Gyurus/conky-system-set/main/install-online.sh | bash
+```
+
+### Manual Installation
+
+```bash
+git clone https://github.com/Gyurus/conky-system-set.git
+cd conky-system-set
+./conkyset.sh
+```
+
+For detailed online installation options, see [ONLINE_INSTALL.md](ONLINE_INSTALL.md)
+
+---
+
 ## ✨ Features
 
+- **🌐 One-Command Installation**: Install directly from GitHub
 - **Comprehensive System Monitoring**: CPU, RAM, storage, temperatures, and network
 - **🖥️ Multi-Monitor Support**: Intelligent detection and positioning across multiple displays
 - **📍 Smart Window Positioning**: Auto-calculated positioning based on monitor resolution
@@ -19,6 +47,7 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
 - **Battery Support**: Battery status and time remaining (when available)
 - **Weather Integration**: Current weather information with auto-location detection
 - **Public IP Display**: Shows your current public IP address
+- **🔄 Automatic Updates**: Built-in update checking and management
 - **Complete Automation**: Full setup, startup, and removal scripts
 - **Non-Destructive**: Copy files instead of moving them
 - **Cross-Platform**: Supports multiple package managers (apt, pacman, dnf)
@@ -26,6 +55,17 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
 ---
 
 ## 📁 Files Overview
+
+### `install-online.sh` ✨ NEW
+> **Online installer** - Downloads and sets up Conky System Set from GitHub.
+
+**Features:**
+- ✅ One-command installation
+- ✅ Checks prerequisites automatically
+- ✅ Downloads all necessary files
+- ✅ Option for full or minimal installation
+- ✅ Interactive setup with sensible defaults
+- ✅ Can run setup immediately after install
 
 ### `conky.template.conf`
 > Template configuration file with placeholders that get replaced during setup.
@@ -46,6 +86,7 @@ A comprehensive and visually clean Conky setup for monitoring your system in rea
 - ✅ Supports multiple Linux distributions
 - 🖥️ **Multi-monitor support with intelligent positioning**
 - 📍 **Resolution-aware window placement**
+- 🔄 **Automatic update checking**
 
 **Usage:** 
 ```bash

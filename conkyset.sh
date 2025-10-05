@@ -117,7 +117,7 @@ fi
 # Start prechecks
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                    Conky System Monitor                      ║"
-echo "║                       SETUP TOOL                             ║"
+echo "║                  ADVANCED SETUP TOOL v1.8                    ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "🚀 Starting Conky setup and installation..."
