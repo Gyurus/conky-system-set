@@ -5,6 +5,32 @@ All notable changes to Conky System Set are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2025-10-05
+
+### Changed
+- **Documentation Consolidation**: Merged all documentation into comprehensive CHANGELOG.md
+- Repository cleanup: Removed 24 unnecessary files (test scripts, backup files, redundant docs)
+- Improved repository structure following industry best practices
+- Updated README.md with clear documentation section
+
+### Removed
+- 10 redundant markdown documentation files (content preserved in CHANGELOG.md)
+- 12 test and debug scripts (not needed for production)
+- 2 backup configuration files
+- **Total cleanup**: 3,078 lines removed, repository now cleaner and easier to navigate
+
+### Documentation
+- Created comprehensive CHANGELOG.md following Keep a Changelog format
+- All version history and technical details preserved
+- Better organization: README.md (getting started), CHANGELOG.md (history), ONLINE_INSTALL.md (installation)
+- Single source of truth for version history and changes
+
+### Benefits
+- Cleaner repository structure (15 files vs 39 files)
+- Easier to navigate and understand
+- No duplicate content to maintain
+- Professional appearance following open source best practices
+
 ## [1.8.1] - 2025-10-05
 
 ### Critical Fix

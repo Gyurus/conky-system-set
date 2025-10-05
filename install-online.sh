@@ -30,7 +30,7 @@ NC='\033[0m' # No Color
 print_header() {
     echo ""
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║        Conky System Set - Online Installer v1.8             ║"
+    echo "║        Conky System Set - Online Installer v1.8.2           ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
     
@@ -345,7 +345,7 @@ show_summary() {
     echo "║              INSTALLATION COMPLETE!                          ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
-    print_success "Conky System Set v1.8 has been installed!"
+    print_success "Conky System Set v1.8.2 has been installed!"
     echo ""
     echo "📁 Installation directory: $INSTALL_DIR"
     echo ""

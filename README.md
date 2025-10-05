@@ -1,4 +1,4 @@
-# Conky System Monitor v1.8 (Multi-Monitor Support)
+# Conky System Monitor v1.8.2 (Multi-Monitor Support)
 
 A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, complete setup automation, and **one-command online installation**.
 
