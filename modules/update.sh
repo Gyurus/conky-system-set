@@ -2,7 +2,7 @@
 # Module for update checking and version management
 
 # Version information
-CURRENT_VERSION="1.8.2"
+CURRENT_VERSION="1.8.3"
 VERSION_CHECK_URL="https://api.github.com/repos/Gyurus/conky-system-set/releases/latest"
 SKIP_VERSION_FILE="$HOME/.conky-system-set-skip-version"
 UPDATE_CHECK_FILE="$HOME/.conky-system-set-last-check"
