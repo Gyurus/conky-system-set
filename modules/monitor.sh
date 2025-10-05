@@ -83,11 +83,11 @@ detect_monitors() {
 # Display monitor information in a formatted way
 show_monitor_info() {
     local count="${MONITOR_INFO[count]:-0}"
-    echo "   🖥️ Detected $count monitor(s):"
+    echo "   🖥️  Detected $count monitor(s):"
     echo ""
     
     if [[ "$count" -eq 0 ]]; then
-        echo "   ⚠️ No monitors detected by xrandr"
+        echo "   ⚠️  No monitors detected by xrandr"
         return
     fi
     
@@ -100,13 +100,12 @@ show_monitor_info() {
         local is_primary=""
         
         if [[ "${MONITOR_INFO[primary]:-}" == "$name" ]]; then
-            is_primary=" (Primary)"
+            is_primary=" ⭐ Primary"
         fi
         
-        echo "   $((i+1)). $name$is_primary"
-        echo "      Resolution: $resolution"
-        echo "      Position: +$position"
-        echo "      Size: ${width}×${height} pixels"
+        echo "   [$((i+1))] $name$is_primary"
+        echo "       • Resolution: $resolution (${width}×${height} pixels)"
+        echo "       • Position: +$position"
         echo ""
     done
 }
@@ -209,6 +208,7 @@ get_monitor_config() {
         selected_index=0
         echo "   ✅ Single monitor detected: $selected_monitor" >&2
     else
+        # First, show detailed monitor information
         show_monitor_info >&2
         
         if [[ "$noninteractive" == true ]]; then
@@ -223,23 +223,14 @@ get_monitor_config() {
                 echo "   🎯 Non-interactive mode: using first monitor ($selected_monitor)" >&2
             fi
         else
-            echo "   ❓ Please select a monitor for Conky display:" >&2
-            for i in "${!MONITOR_NAMES[@]}"; do
-                local name="${MONITOR_NAMES[$i]}"
-                local resolution="${MONITOR_INFO["${name}_resolution"]:-unknown}"
-                local is_primary=""
-                if [[ "${MONITOR_INFO[primary]:-}" == "$name" ]]; then
-                    is_primary=" (Primary)"
-                fi
-                echo "      $((i+1)). $name - $resolution$is_primary" >&2
-            done
-            
+            # Now ask for user selection with clear prompt
             local default_choice=1
             if [[ -n "${MONITOR_INFO[primary_index]:-}" ]]; then
                 default_choice=$((${MONITOR_INFO[primary_index]} + 1))
             fi
             
-            echo -n "   Enter monitor number [$default_choice]: " >&2
+            echo "   ❓ Select monitor for Conky display [1-$count, default: $default_choice]:" >&2
+            echo -n "   Enter monitor number: " >&2
             read choice
             if [[ "$choice" =~ ^[1-9][0-9]*$ ]] && [[ "$choice" -le "$count" ]]; then
                 selected_index=$((choice-1))
