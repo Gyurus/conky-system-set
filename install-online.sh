@@ -4,6 +4,11 @@
 
 set -e  # Exit on error
 
+# Ensure we can read from terminal even when piped from curl
+if [ ! -t 0 ]; then
+    exec < /dev/tty
+fi
+
 # Configuration
 REPO_OWNER="Gyurus"
 REPO_NAME="conky-system-set"
