@@ -365,7 +365,14 @@ After installation, files are located at:
 
 ---
 
-## 📌 Notes
+## � Documentation
+
+- **[CHANGELOG.md](CHANGELOG.md)** - Complete version history with detailed changes, fixes, and migration guides
+- **[ONLINE_INSTALL.md](ONLINE_INSTALL.md)** - Comprehensive online installation guide with troubleshooting
+
+---
+
+## �📌 Notes
 
 - **Distribution Support**: Supports Ubuntu/Debian (apt), Arch (pacman), and Fedora (dnf)
 - **Non-Destructive**: Original files remain in project directory
