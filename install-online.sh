@@ -1,5 +1,6 @@
 #!/bin/bash
-# Conky System Set - Online Installer
+#!/bin/bash
+# install-online.sh - Conky System Set Online Installer v1.8.5
 # Downloads and sets up the complete conky-system-set from GitHub
 
 set -e  # Exit on error
@@ -472,7 +473,7 @@ show_summary() {
     echo "║              INSTALLATION COMPLETE!                          ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
-    print_success "Conky System Set v1.8.4 has been installed!"
+    print_success "Conky System Set v1.8.5 has been installed!"
     echo ""
     echo "📁 Installation directory: $INSTALL_DIR"
     echo ""
@@ -561,11 +562,9 @@ main() {
         echo ""
         print_info "Starting Conky setup..."
         echo ""
-        if [ -f "$HOME/conkyset.sh" ]; then
-            exec "$HOME/conkyset.sh"
-        else
-            exec "$INSTALL_DIR/conkyset.sh"
-        fi
+        # Change to installation directory so conkyset.sh can find required scripts
+        cd "$INSTALL_DIR"
+        exec "./conkyset.sh"
     fi
     
     echo ""

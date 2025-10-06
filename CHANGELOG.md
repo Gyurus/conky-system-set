@@ -5,6 +5,20 @@ All notable changes to Conky System Set are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.5] - 2025-10-07
+
+### Fixed
+- **Critical Bug**: Fixed script execution context issue
+- Installer now properly changes to installation directory before running conkyset.sh
+- Resolves "Required scripts not found in the current directory" error
+- Scripts are now executed from correct working directory where all files are located
+
+### Technical Details
+- **Problem**: When installer offered to run setup immediately, it executed conkyset.sh from user's current directory
+- **Impact**: conkyset.sh couldn't find required files (conkystartup.sh, rm-conkyset.sh, conky.template.conf)
+- **Solution**: Added `cd "$INSTALL_DIR"` before executing setup script
+- **Result**: Setup now runs correctly after installation without manual intervention
+
 ## [1.8.4] - 2025-10-05
 
 ### Added
