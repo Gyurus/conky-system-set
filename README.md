@@ -1,4 +1,4 @@
-# Conky System Set v1.8.5
+# Conky System Set v1.8.6
 
 A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, complete setup automation, and **one-command online installation**.
 
@@ -47,7 +47,7 @@ For detailed online installation options, see [ONLINE_INSTALL.md](ONLINE_INSTALL
 - **Battery Support**: Battery status and time remaining (when available)
 - **Weather Integration**: Current weather information with auto-location detection
 - **Public IP Display**: Shows your current public IP address
-- **🔄 Automatic Updates**: Built-in update checking and management
+- **🔄 Automatic Updates**: Built-in update checking and management with **automatic update capability**
 - **Complete Automation**: Full setup, startup, and removal scripts
 - **Non-Destructive**: Copy files instead of moving them
 - **Cross-Platform**: Supports multiple package managers (apt, pacman, dnf)
@@ -107,6 +107,8 @@ For detailed online installation options, see [ONLINE_INSTALL.md](ONLINE_INSTALL
 - `--check-updates` - Check for updates and prompt user
 - `--force-update-check` - Force update check regardless of interval
 - `--skip-update-check` - Skip automatic update check
+- `--enable-autoupdate` - Enable automatic updates on startup
+- `--disable-autoupdate` - Disable automatic updates on startup
 
 ### `conkystartup.sh`
 > **Startup script** - Configures network interface and launches Conky.
@@ -122,40 +124,23 @@ For detailed online installation options, see [ONLINE_INSTALL.md](ONLINE_INSTALL
 ./conkystartup.sh
 ```
 
-### `rm-conkyset.sh` 
-> **Removal script** - Completely uninstalls Conky setup.
+### `update_version.sh`
+> **Version update script** - Updates version number across all project files.
 
 **Features:**
-- ✅ Stops running Conky processes
-- ✅ Removes all configuration files
-- ✅ Removes autostart entries
-- ✅ Cleans up copied scripts
-- ✅ Provides manual removal instructions
+- ✅ Updates VERSION file with new version number
+- ✅ Updates README.md title automatically
+- ✅ Validates version format (x.y.z)
+- ✅ Provides usage instructions
 
 **Usage:**
 ```bash
-./rm-conkyset.sh
+./update_version.sh 1.8.7
 ```
 
 ---
 
-## 🚀 Quick Installation
-
-1. **Make scripts executable:**
-   ```bash
-   chmod +x conkyset.sh conkystartup.sh rm-conkyset.sh
-   ```
-
-2. **Run the setup:**
-   ```bash
-   ./conkyset.sh
-   ```
-
-3. **Conky will start automatically!** 🎉
-
----
-
-## 🖥️ Multi-Monitor Support
+## ️ Multi-Monitor Support
 
 ### Automatic Multi-Monitor Detection
 
@@ -226,15 +211,17 @@ During setup, the system will show detailed monitor information:
 
 ## 🔄 Automatic Updates
 
-The system includes intelligent update checking to keep your Conky setup current.
+The system includes intelligent update checking with **automatic update capability** to keep your Conky setup current.
 
 ### Update Check Features
 
 - **Automatic Checking**: Checks for updates every 24 hours
+- **Automatic Updates**: Optional automatic installation of updates on startup
 - **Version Skipping**: Option to skip specific versions you don't want
 - **Smart Prompting**: Only prompts when updates are actually available
 - **Git Integration**: Automatic updates if installed via git
 - **Manual Override**: Force checks or disable automatic checking
+- **CLI Control**: Enable/disable autoupdate via command-line options
 
 ### Update Commands
 
@@ -248,8 +235,29 @@ The system includes intelligent update checking to keep your Conky setup current
 # Skip automatic update check during setup
 ./conkyset.sh --skip-update-check --yes
 
+# Enable automatic updates
+./conkyset.sh --enable-autoupdate
+
+# Disable automatic updates
+./conkyset.sh --disable-autoupdate
+
 # Normal setup with automatic update check
 ./conkyset.sh
+```
+
+### Autoupdate Configuration
+
+The autoupdate feature can be controlled via command-line options:
+
+```bash
+# Enable autoupdate during setup
+./conkyset.sh --enable-autoupdate --yes
+
+# Disable autoupdate during setup
+./conkyset.sh --disable-autoupdate --yes
+
+# Check current autoupdate status
+source modules/update.sh && get_update_config "autoupdate_enabled"
 ```
 
 ### Update Process Flow
@@ -270,6 +278,17 @@ When an update is detected, you'll see:
 ❓ What would you like to do? [1]:
 ```
 
+### Autoupdate Process Flow
+
+When autoupdate is enabled, updates are installed automatically on startup:
+
+```
+🔄 Checking for automatic updates...
+🎉 New version available: v1.8.0 (current: v1.7.0)
+🚀 Performing automatic update to v1.8.0...
+✅ Successfully auto-updated to v1.8.0!
+```
+
 ### Update Behaviors
 
 | Option | Behavior |
@@ -278,6 +297,7 @@ When an update is detected, you'll see:
 | **Skip this version** | Never prompts for this specific version again |
 | **Remind me later** | Asks again in 24 hours |
 | **Show release notes** | Displays changelog and returns to menu |
+| **Autoupdate** | Automatically installs updates on startup (when enabled) |
 
 ---
 
@@ -319,6 +339,21 @@ pgrep conky
 pkill conky && ~/conkystartup.sh
 ```
 
+### Update Management:
+```bash
+# Check for updates manually
+~/conkyset.sh --check-updates
+
+# Enable automatic updates
+~/conkyset.sh --enable-autoupdate
+
+# Disable automatic updates
+~/conkyset.sh --disable-autoupdate
+
+# Check autoupdate status
+source ~/conky-system-set/modules/update.sh && get_update_config "autoupdate_enabled"
+```
+
 ### Remove everything:
 ```bash
 ~/rm-conkyset.sh
@@ -326,7 +361,7 @@ pkill conky && ~/conkystartup.sh
 
 ### Reinstall:
 ```bash
-./conkyset.sh
+~/conkyset.sh
 ```
 
 ---
@@ -339,6 +374,45 @@ After installation, files are located at:
 - **Autostart Entry**: `~/.config/autostart/conky.desktop`
 - **Startup Script**: `~/conkystartup.sh`
 - **Removal Script**: `~/rm-conkyset.sh`
+- **Update Configuration**: `~/.conky-system-set-update-config`
+- **Update Check Timestamp**: `~/.conky-system-set-last-check`
+- **Skipped Version**: `~/.conky-system-set-skip-version`
+
+**Project files:**
+- **Version File**: `VERSION` (contains current version number)
+- **Version Update Script**: `update_version.sh` (for updating version across all files)
+
+---
+
+## 🗒️ What's New in v1.8.6
+
+- **🔄 Dynamic Version System**: Version number now read from VERSION file for easier maintenance
+- **📦 Improved Version Management**: Centralized version control across all scripts and documentation
+- **🔧 Enhanced Update System**: Better version detection and fallback mechanisms
+- **📋 Configuration Persistence**: Version information properly synchronized across components
+
+---
+
+## 🗒️ What's New in v1.8.5
+
+- **🔄 Automatic Update System**: New autoupdate capability with CLI control options
+- **⚙️ Enhanced Update Management**: Enable/disable automatic updates via `--enable-autoupdate` and `--disable-autoupdate` flags
+- **🚀 Startup Autoupdate**: Automatic update checking and installation on Conky startup (when enabled)
+- **💾 Configuration Persistence**: Autoupdate settings stored in user configuration file
+- **🔧 Improved CLI Options**: Extended command-line interface with new autoupdate controls
+- **📦 Git Integration**: Enhanced git-based automatic updates with change preservation
+- **🌐 Network Resilience**: Improved update checking with fallback network methods
+
+---
+
+## 🗒️ What's New in v1.7
+
+- **🖥️ Advanced Multi-Monitor Support**: Intelligent positioning across multiple displays with resolution-aware calculations
+- **📍 Smart Window Positioning**: Auto-calculated positioning based on monitor resolution and safe margins
+- **🎯 Flexible Placement Options**: Top/bottom, left/right, center positioning on any monitor
+- **🔍 Enhanced Monitor Detection**: Detailed monitor information display with resolution and positioning data
+- **⚙️ Extended CLI Options**: New `--position` and `--monitor` flags for precise control
+- **🛡️ Improved Error Handling**: Better validation and fallback mechanisms
 
 ---
 
@@ -348,11 +422,10 @@ After installation, files are located at:
 - **📍 Improved Location Validation**: 2 full manual attempts before fallback to detected location
 - **🌦️ Advanced Weather Reporting**: Comprehensive weather data with current conditions, forecasts, and sun times
 - **🛡️ Better Error Handling**: Robust syntax error fixes and improved Conky configuration parsing
-- **⚙️ Hardware Detection**: Enhanced GPU, thermal sensor, and hardware monitoring capabilities
+- **⚙️ Hardware Detection**: Enhanced GPU, thermal sensor, and desktop environment detection
 - **🔧 Setup Script Improvements**: Better command-line options (--no-gpu, --nosensor, --auto-location)
 - **💻 Brightness Monitoring**: Dynamic backlight detection across different hardware interfaces
 - **📦 Dependency Management**: Smarter package installation and hardware-specific optimizations
-
 ---
 
 ## 🗒️ Previous Versions
@@ -380,6 +453,7 @@ After installation, files are located at:
 - **Temperature Monitoring**: Includes fallbacks for various sensor types
 - **Network Flexibility**: Works with both wired and wireless interfaces
 - **Auto-Start**: Configures automatic startup on login
+- **Dynamic Versioning**: Version number is read from VERSION file for easy maintenance
 
 ---
 

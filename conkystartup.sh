@@ -3,6 +3,17 @@
 sleep 5
 echo "Starting Conky setup..."
 
+# Load update module for autoupdate functionality
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/modules/update.sh" ]; then
+    source "$SCRIPT_DIR/modules/update.sh"
+    
+    # Check for updates and auto-update if enabled
+    echo "🔍 Checking for automatic updates..."
+    check_and_autoupdate "false"
+    echo ""
+fi
+
 # Detect active interface: prefer Ethernet, fallback to Wi-Fi
 iface=$(ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; exit}')
 [ -z "$iface" ] && iface=$(nmcli device status | awk '$3 == "connected" && $2 == "wifi" {print $1; exit}')

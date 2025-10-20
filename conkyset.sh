@@ -12,6 +12,8 @@ show_help() {
     echo "      --check-updates    Check for updates and prompt user"
     echo "      --force-update-check  Force update check regardless of interval"
     echo "      --skip-update-check   Skip automatic update check"
+    echo "      --enable-autoupdate   Enable automatic updates on startup"
+    echo "      --disable-autoupdate  Disable automatic updates on startup"
     echo "      --help       Show this help message and exit"
     exit 0
 }
@@ -26,6 +28,8 @@ FORCE_MONITOR=""
 CHECK_UPDATES_ONLY=false
 FORCE_UPDATE_CHECK=false
 SKIP_UPDATE_CHECK=false
+ENABLE_AUTOUPDATE=false
+DISABLE_AUTOUPDATE=false
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -85,6 +89,16 @@ while [[ $# -gt 0 ]]; do
             echo "   ℹ️  Automatic update check disabled."
             shift
             ;;
+        --enable-autoupdate)
+            ENABLE_AUTOUPDATE=true
+            echo "   ℹ️  Automatic updates will be enabled."
+            shift
+            ;;
+        --disable-autoupdate)
+            DISABLE_AUTOUPDATE=true
+            echo "   ℹ️  Automatic updates will be disabled."
+            shift
+            ;;
         *)
             break
             ;;
@@ -94,12 +108,38 @@ done
 # Load modules early for update check
 source "$(dirname "$0")/modules/update.sh"
 
+# Get current version for display
+get_current_version_for_display() {
+    if [[ -f "$(dirname "$0")/VERSION" ]]; then
+        cat "$(dirname "$0")/VERSION" | tr -d '\n'
+    else
+        echo "1.8.6"  # Fallback version
+    fi
+}
+
+CURRENT_VERSION=$(get_current_version_for_display)
+
 # Handle update check options
 if [[ "$CHECK_UPDATES_ONLY" == true ]]; then
     echo "🔍 Checking for updates..."
     echo "════════════════════════════"
     update_check_cli --force
     exit 0
+fi
+
+# Handle autoupdate configuration options
+if [[ "$ENABLE_AUTOUPDATE" == true ]]; then
+    echo "🔄 Enabling automatic updates..."
+    set_update_config "autoupdate_enabled" "true"
+    echo "✅ Automatic updates enabled"
+    echo ""
+fi
+
+if [[ "$DISABLE_AUTOUPDATE" == true ]]; then
+    echo "🔄 Disabling automatic updates..."
+    set_update_config "autoupdate_enabled" "false"
+    echo "✅ Automatic updates disabled"
+    echo ""
 fi
 
 # Perform automatic update check (unless skipped)
@@ -117,7 +157,7 @@ fi
 # Start prechecks
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                    Conky System Monitor                      ║"
-echo "║                  ADVANCED SETUP TOOL v1.8.5                  ║"
+echo "║                  ADVANCED SETUP TOOL v$CURRENT_VERSION                  ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "🚀 Starting Conky setup and installation..."

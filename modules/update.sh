@@ -2,10 +2,16 @@
 # Module for update checking and version management
 
 # Version information
-CURRENT_VERSION="1.8.5"
+# Read version from VERSION file if it exists, otherwise use fallback
+if [[ -f "$(dirname "$0")/../VERSION" ]]; then
+    CURRENT_VERSION=$(cat "$(dirname "$0")/../VERSION" | tr -d '\n')
+else
+    CURRENT_VERSION="1.8.6"  # Fallback version
+fi
 VERSION_CHECK_URL="https://api.github.com/repos/Gyurus/conky-system-set/releases/latest"
 SKIP_VERSION_FILE="$HOME/.conky-system-set-skip-version"
 UPDATE_CHECK_FILE="$HOME/.conky-system-set-last-check"
+UPDATE_CONFIG_FILE="$HOME/.conky-system-set-update-config"
 UPDATE_CHECK_INTERVAL=86400  # 24 hours in seconds
 
 # Get the current version
@@ -97,6 +103,51 @@ skip_version() {
 clear_skipped_version() {
     rm -f "$SKIP_VERSION_FILE"
     echo "   ✅ Cleared skipped version preference."
+}
+
+# Configuration management functions
+set_update_config() {
+    local key="$1"
+    local value="$2"
+    
+    # Create config directory if it doesn't exist
+    mkdir -p "$(dirname "$UPDATE_CONFIG_FILE")"
+    
+    # Read existing config or create empty
+    local config_content=""
+    if [[ -f "$UPDATE_CONFIG_FILE" ]]; then
+        config_content=$(cat "$UPDATE_CONFIG_FILE" 2>/dev/null)
+    fi
+    
+    # Update or add the key-value pair
+    if grep -q "^${key}=" <<< "$config_content"; then
+        # Update existing key
+        config_content=$(sed "s/^${key}=.*/${key}=${value}/" <<< "$config_content")
+    else
+        # Add new key
+        config_content="${config_content}${key}=${value}\n"
+    fi
+    
+    # Write back to file
+    echo -e "$config_content" > "$UPDATE_CONFIG_FILE"
+}
+
+get_update_config() {
+    local key="$1"
+    local default_value="${2:-}"
+    
+    if [[ -f "$UPDATE_CONFIG_FILE" ]]; then
+        local value
+        value=$(grep "^${key}=" "$UPDATE_CONFIG_FILE" 2>/dev/null | cut -d'=' -f2-)
+        if [[ -n "$value" ]]; then
+            echo "$value"
+            return 0
+        fi
+    fi
+    
+    # Return default value if key not found
+    echo "$default_value"
+    return 1
 }
 
 # Check if we should perform an update check (respects interval)
@@ -302,6 +353,92 @@ perform_update() {
         echo "   3. Replace your current files with the new ones"
         echo "   4. Run ./conkyset.sh to reconfigure"
         echo ""
+    fi
+}
+
+# Autoupdate functionality
+perform_autoupdate() {
+    local latest_version="$1"
+    
+    echo "   🔄 Performing automatic update to $latest_version..."
+    
+    # Check if we're in a git repository
+    if [[ -d ".git" ]]; then
+        echo "   📂 Detected git repository. Updating via git..."
+        
+        # Stash any local changes
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo "   💾 Stashing local changes..."
+            git stash push -m "Auto-stash before autoupdate to $latest_version"
+        fi
+        
+        # Fetch latest changes
+        echo "   📥 Fetching latest changes..."
+        if git fetch origin; then
+            # Checkout the latest version tag
+            echo "   🔄 Switching to version $latest_version..."
+            if git checkout "$latest_version"; then
+                echo "   ✅ Successfully auto-updated to $latest_version!"
+                echo ""
+                echo "   🎯 Auto-update completed! Configuration should remain compatible."
+                return 0
+            else
+                echo "   ❌ Failed to checkout version $latest_version"
+                return 1
+            fi
+        else
+            echo "   ❌ Failed to fetch updates from repository"
+            return 1
+        fi
+    else
+        echo "   ⚠️  Git repository not detected. Cannot perform automatic update."
+        return 1
+    fi
+}
+
+check_and_autoupdate() {
+    # Check if autoupdate is enabled
+    local autoupdate_enabled
+    autoupdate_enabled=$(get_update_config "autoupdate_enabled" "false")
+    
+    if [[ "$autoupdate_enabled" != "true" ]]; then
+        return 0  # Autoupdate not enabled, skip silently
+    fi
+    
+    echo "   🔄 Checking for automatic updates..."
+    
+    # Get latest version
+    local latest_version
+    latest_version=$(get_latest_version)
+    
+    if [[ -z "$latest_version" ]]; then
+        echo "   ⚠️  Unable to check for autoupdate (network issue or API unavailable)"
+        return 1
+    fi
+    
+    local current_version
+    current_version=$(get_current_version)
+    
+    # Compare versions
+    if version_compare "$current_version" "$latest_version"; then
+        # New version available
+        echo "   🎉 New version available: $latest_version (current: $current_version)"
+        
+        # Check if this version is skipped
+        if is_version_skipped "$latest_version"; then
+            echo "   ⏭️  Version $latest_version is marked as skipped. Skipping autoupdate."
+            return 0
+        fi
+        
+        # Perform automatic update
+        if perform_autoupdate "$latest_version"; then
+            echo "   ✅ Automatic update completed successfully!"
+        else
+            echo "   ❌ Automatic update failed. You can update manually later."
+            return 1
+        fi
+    else
+        echo "   ✅ Already up to date!"
     fi
 }
 
