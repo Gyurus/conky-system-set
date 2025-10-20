@@ -18,9 +18,6 @@ if [ ! -f "$HOME/.config/conky/conky.conf" ]; then
   echo "Error: Configuration file $HOME/.config/conky/conky.conf not found."
   exit 1
 fi
-if [ ! -d "$HOME/.config/conky" ]; then
-  mkdir -p "$HOME/.config/conky"
-fi
 sed -i "s|@@IFACE@@|$iface|g" "$HOME/.config/conky/conky.conf"
 
 # The template now already contains the Wi-Fi and GPU temperature sections
@@ -40,14 +37,14 @@ if command -v nvidia-smi &> /dev/null; then
 # AMD
 elif ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'amdgpu' &> /dev/null; then
     AMD_HWMON=$(ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'amdgpu' | head -1)
-    if [ -f "$(dirname $AMD_HWMON)/temp1_input" ]; then
-        GPU_COMMAND="cat $(dirname $AMD_HWMON)/temp1_input | awk '{print \$1/1000\"°C\"}'"
+    if [ -f "$(dirname "$AMD_HWMON")/temp1_input" ]; then
+        GPU_COMMAND="cat $(dirname "$AMD_HWMON")/temp1_input | awk '{print \$1/1000\"°C\"}'"
     fi
 # Intel
 elif ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'i915' &> /dev/null; then
     INTEL_HWMON=$(ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'i915' | head -1)
-    if [ -f "$(dirname $INTEL_HWMON)/temp1_input" ]; then
-        GPU_COMMAND="cat $(dirname $INTEL_HWMON)/temp1_input | awk '{print \$1/1000\"°C\"}'"
+    if [ -f "$(dirname "$INTEL_HWMON")/temp1_input" ]; then
+        GPU_COMMAND="cat $(dirname "$INTEL_HWMON")/temp1_input | awk '{print \$1/1000\"°C\"}'"
     fi
 fi
 
@@ -57,9 +54,9 @@ if [ "$GPU_COMMAND" = "echo N/A" ]; then
         if grep -qE 'x86_pkg_temp|pch' "$thermal"; then
             continue # Skip CPU package and PCH temps
         fi
-        TEMP=$(cat "$(dirname $thermal)/temp")
+        TEMP=$(cat "$(dirname "$thermal")/temp")
         if [ "$TEMP" -gt 0 ]; then
-             GPU_COMMAND="cat $(dirname $thermal)/temp | awk '{print \$1/1000\"°C\"}'"
+             GPU_COMMAND="cat $(dirname "$thermal")/temp | awk '{print \$1/1000\"°C\"}'"
              break
         fi
     done

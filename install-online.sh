@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 # install-online.sh - Conky System Set Online Installer v1.8.5
 # Downloads and sets up the complete conky-system-set from GitHub
 
