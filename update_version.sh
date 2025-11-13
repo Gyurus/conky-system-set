@@ -4,7 +4,7 @@
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <new_version>"
-    echo "Example: $0 1.8.7"
+    echo "Example: $0 1.8.9"
     exit 1
 fi
 

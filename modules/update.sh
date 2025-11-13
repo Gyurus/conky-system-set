@@ -5,9 +5,11 @@
 # Read version from VERSION file if it exists, otherwise use fallback
 if [[ -f "$(dirname "$0")/../VERSION" ]]; then
     CURRENT_VERSION=$(cat "$(dirname "$0")/../VERSION" | tr -d '\n')
-else
-    CURRENT_VERSION="1.8.6"  # Fallback version
-fi
+    elif [ -f "$HOME/VERSION" ]; then
+        cat "$HOME/VERSION" | tr -d '\n'
+    else
+        echo "1.9.0"  # Fallback version
+    fi
 VERSION_CHECK_URL="https://api.github.com/repos/Gyurus/conky-system-set/releases/latest"
 SKIP_VERSION_FILE="$HOME/.conky-system-set-skip-version"
 UPDATE_CHECK_FILE="$HOME/.conky-system-set-last-check"

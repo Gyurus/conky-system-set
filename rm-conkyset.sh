@@ -2,8 +2,17 @@
 # Enhanced Conky Removal Script with Failsafe Features
 # This script safely removes all Conky configuration and files with comprehensive error handling
 
-# Script version and safety features
-SCRIPT_VERSION="2.0"
+# Get version from VERSION file if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/VERSION" ]; then
+    SCRIPT_VERSION=$(cat "$SCRIPT_DIR/VERSION" | tr -d '\n')
+elif [ -f "$HOME/VERSION" ]; then
+    SCRIPT_VERSION=$(cat "$HOME/VERSION" | tr -d '\n')
+else
+    SCRIPT_VERSION="1.9.0"  # Fallback version
+fi
+
+# Script safety features
 BACKUP_DIR="$HOME/.conky_backup_$(date +%Y%m%d_%H%M%S)"
 DRY_RUN=false
 FORCE_REMOVAL=false
@@ -309,9 +318,13 @@ show_removal_summary() {
     echo "   • ~/conkystartup.sh"
     echo "   • ~/rm-conkyset.sh (this script)"
     echo ""
+    echo "   Modules (autoupdate support):"
+    echo "   • ~/modules/ directory"
+    echo ""
     echo "   Update System:"
     echo "   • ~/.conky-system-set-skip-version"
     echo "   • ~/.conky-system-set-last-check"
+    echo "   • ~/.conky-system-set-update-config"
     echo ""
     echo "   Backup Files:"
     echo "   • *.YYYYMMDD_HHMMSS.backup files (optional cleanup)"
@@ -457,9 +470,14 @@ echo "📜 Processing scripts..."
 safe_remove "$HOME/conkystartup.sh" "Startup script" || ((removal_errors++))
 
 echo ""
-echo "🔧 Processing update system files..."
+echo "� Processing modules directory..."
+safe_remove_dir "$HOME/modules" "Modules directory (autoupdate support)"
+
+echo ""
+echo "�🔧 Processing update system files..."
 safe_remove "$HOME/.conky-system-set-skip-version" "Update skip version file" || ((removal_errors++))
 safe_remove "$HOME/.conky-system-set-last-check" "Update check timestamp file" || ((removal_errors++))
+safe_remove "$HOME/.conky-system-set-update-config" "Update configuration file" || ((removal_errors++))
 
 echo ""
 clean_backup_files

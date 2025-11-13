@@ -257,10 +257,16 @@ else
             echo "   💾 Existing $script backed up to: $HOME/${script}.${BACKUP_TIMESTAMP}.backup"
         fi
     done
-    # Copy scripts to home directory
+    # Copy scripts and modules to home directory
     cp conkystartup.sh "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
     cp rm-conkyset.sh "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
-    echo "Scripts copied to home directory successfully."    
+    
+    # Copy modules directory for autoupdate functionality
+    echo "Copying modules directory for autoupdate support..."
+    mkdir -p "$HOME/modules" || { echo "Failed to create modules directory in home."; exit 1; }
+    cp -r modules/* "$HOME/modules/" || { echo "Failed to copy modules to home directory."; exit 1; }
+    
+    echo "Scripts and modules copied to home directory successfully."    
 fi
 
 # Check if conky.template.conf exists in this directory

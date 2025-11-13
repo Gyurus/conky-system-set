@@ -1,8 +1,16 @@
 #!/bin/bash
-# install-online.sh - Conky System Set Online Installer v1.8.5
+# install-online.sh - Conky System Set Online Installer
 # Downloads and sets up the complete conky-system-set from GitHub
 
 set -e  # Exit on error
+
+# Get version from VERSION file if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/VERSION" ]; then
+    INSTALLER_VERSION=$(cat "$SCRIPT_DIR/VERSION" | tr -d '\n')
+else
+    INSTALLER_VERSION="1.9.0"  # Fallback version
+fi
 
 # Ensure we can read from terminal even when piped from curl
 if [ ! -t 0 ]; then
@@ -18,7 +26,7 @@ GITHUB_RAW_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${B
 GITHUB_API_URL="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}"
 
 # Check if running from local repo (for testing)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# SCRIPT_DIR already defined above for VERSION loading
 LOCAL_MODE=false
 if [ -f "$SCRIPT_DIR/conkyset.sh" ] && [ -f "$SCRIPT_DIR/conky.template.conf" ]; then
     LOCAL_MODE=true
@@ -35,7 +43,7 @@ NC='\033[0m' # No Color
 print_header() {
     echo ""
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║        Conky System Set - Online Installer v1.8.4           ║"
+    echo "║        Conky System Set - Online Installer v$INSTALLER_VERSION           ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
     
@@ -472,7 +480,7 @@ show_summary() {
     echo "║              INSTALLATION COMPLETE!                          ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
-    print_success "Conky System Set v1.8.5 has been installed!"
+    print_success "Conky System Set v$INSTALLER_VERSION has been installed!"
     echo ""
     echo "📁 Installation directory: $INSTALL_DIR"
     echo ""
