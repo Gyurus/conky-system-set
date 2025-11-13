@@ -332,9 +332,27 @@ check_previous_installation() {
         cleanup_needed=true
     fi
     
-    # Check .conky directory
+    # Check for modules directory
+    if [ -d "$HOME/modules" ]; then
+        found_items+=("Modules directory: ~/modules")
+        cleanup_needed=true
+    fi
+    
+    # Check for VERSION file
+    if [ -f "$HOME/VERSION" ]; then
+        found_items+=("Version file: ~/VERSION")
+        cleanup_needed=true
+    fi
+    
+    # Check .config/conky directory (correct path)
+    if [ -d "$HOME/.config/conky" ]; then
+        found_items+=("Config directory: ~/.config/conky")
+        cleanup_needed=true
+    fi
+    
+    # Check old .conky directory (legacy)
     if [ -d "$HOME/.conky" ]; then
-        found_items+=("Config directory: ~/.conky")
+        found_items+=("Old config directory: ~/.conky (legacy)")
         cleanup_needed=true
     fi
     
@@ -391,21 +409,45 @@ check_previous_installation() {
     echo "   Removing scripts..."
     rm -f "$HOME/conkyset.sh" "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" 2>/dev/null || true
     
+    # Remove modules directory
+    if [ -d "$HOME/modules" ]; then
+        echo "   Removing modules directory..."
+        rm -rf "$HOME/modules" 2>/dev/null || true
+    fi
+    
+    # Remove VERSION file
+    if [ -f "$HOME/VERSION" ]; then
+        echo "   Removing VERSION file..."
+        rm -f "$HOME/VERSION" 2>/dev/null || true
+    fi
+    
     # Remove installation directory
     if [ -d "$INSTALL_DIR" ]; then
         echo "   Removing installation directory..."
         rm -rf "$INSTALL_DIR" 2>/dev/null || true
     fi
     
-    # Remove .conky directory (ask for confirmation)
-    if [ -d "$HOME/.conky" ]; then
-        echo -n "   Remove configuration directory ~/.conky? (y/N): "
-        read remove_config
+    # Remove .config/conky directory (ask for confirmation)
+    if [ -d "$HOME/.config/conky" ]; then
+        echo -n "   Remove configuration directory ~/.config/conky? (y/N): "
+        read -r remove_config
         if [[ "$remove_config" =~ ^[Yy]$ ]]; then
-            rm -rf "$HOME/.conky" 2>/dev/null || true
+            rm -rf "$HOME/.config/conky" 2>/dev/null || true
             echo "   Configuration directory removed"
         else
             echo "   Configuration directory kept"
+        fi
+    fi
+    
+    # Remove old .conky directory (legacy)
+    if [ -d "$HOME/.conky" ]; then
+        echo -n "   Remove old configuration directory ~/.conky? (y/N): "
+        read -r remove_old_config
+        if [[ "$remove_old_config" =~ ^[Yy]$ ]]; then
+            rm -rf "$HOME/.conky" 2>/dev/null || true
+            echo "   Old configuration directory removed"
+        else
+            echo "   Old configuration directory kept"
         fi
     fi
     
@@ -415,9 +457,10 @@ check_previous_installation() {
         rm -f "$autostart_file" 2>/dev/null || true
     fi
     
-    # Remove update check file
+    # Remove update check files
     rm -f "$HOME/.conky-system-set-last-check" 2>/dev/null || true
     rm -f "$HOME/.conky-system-set-skip-version" 2>/dev/null || true
+    rm -f "$HOME/.conky-system-set-update-config" 2>/dev/null || true
     
     print_success "Previous installation removed successfully"
     echo ""

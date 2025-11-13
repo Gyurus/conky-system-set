@@ -217,7 +217,7 @@ if [ -f "$HOME/.config/autostart/conky.desktop" ]; then
 fi
 
 # Check for other Conky-related files in home directory
-for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/.conkyrc"; do
+for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/.conkyrc" "$HOME/VERSION"; do
     if [ -f "$file" ]; then
         echo "   📄 Found existing Conky file: $file"
         if [ "$NONINTERACTIVE" = true ]; then
@@ -236,6 +236,21 @@ for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/.conkyrc"; do
         fi
     fi
 done
+
+# Check for modules directory in home
+if [ -d "$HOME/modules" ]; then
+    echo "   📁 Found existing modules directory in home."
+    if [ "$NONINTERACTIVE" = true ]; then
+        remove_modules="y"
+        echo "   ✅ Non-interactive mode: automatically selected 'yes' to remove modules directory."
+    else
+        read -p "   ❓ Do you want to remove it? (y/n): " remove_modules
+    fi
+    if [[ "$remove_modules" =~ ^[Yy]$ ]]; then
+        rm -rf "$HOME/modules"
+        echo "   🗑️ Removed: $HOME/modules"
+    fi
+fi
 
 echo "   ✅ Clean-up process completed."
 echo "════════════════════════════════════════════════"
@@ -266,7 +281,11 @@ else
     mkdir -p "$HOME/modules" || { echo "Failed to create modules directory in home."; exit 1; }
     cp -r modules/* "$HOME/modules/" || { echo "Failed to copy modules to home directory."; exit 1; }
     
-    echo "Scripts and modules copied to home directory successfully."    
+    # Copy VERSION file for version tracking
+    echo "Copying VERSION file..."
+    cp VERSION "$HOME/VERSION" || { echo "Failed to copy VERSION file to home directory."; exit 1; }
+    
+    echo "Scripts, modules, and VERSION file copied to home directory successfully."    
 fi
 
 # Check if conky.template.conf exists in this directory
