@@ -193,39 +193,41 @@ fi
 
 # Check for previous autostart entries
 if [ -f "$HOME/.config/autostart/conky.desktop" ]; then
-    echo "   🔄 Found existing Conky autostart entry."
-    echo "   ℹ️ The existing entry will be replaced."
+    echo "   🔄 Found existing Conky autostart entry (will be replaced)."
 fi
 
-# Check for other Conky-related files in home directory
-for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/.conkyrc" "$HOME/VERSION"; do
+# Check for existing installation files (will be overwritten)
+local found_existing=false
+for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/VERSION"; do
     if [ -f "$file" ]; then
-        echo "   📄 Found existing Conky file: $file"
-        if [ "$NONINTERACTIVE" = true ]; then
-            remove_file="y"
-            echo "   ✅ Non-interactive mode: automatically selected 'yes' to remove the file."
-        else
-            read -p "   ❓ Do you want to remove it? (y/n): " remove_file
+        if [ "$found_existing" = false ]; then
+            echo "   📄 Found existing installation files (will be overwritten):"
+            found_existing=true
         fi
-        if [[ "$remove_file" =~ ^[Yy]$ ]]; then
-            rm -f "$file"
-            echo "   🗑️ Removed: $file"
-        fi
+        echo "      - $(basename "$file")"
     fi
 done
 
-# Check for modules directory in home
 if [ -d "$HOME/modules" ]; then
-    echo "   📁 Found existing modules directory in home."
-    if [ "$NONINTERACTIVE" = true ]; then
-        remove_modules="y"
-        echo "   ✅ Non-interactive mode: automatically selected 'yes' to remove modules directory."
-    else
-        read -p "   ❓ Do you want to remove it? (y/n): " remove_modules
+    if [ "$found_existing" = false ]; then
+        echo "   � Found existing installation files (will be overwritten):"
+        found_existing=true
     fi
-    if [[ "$remove_modules" =~ ^[Yy]$ ]]; then
-        rm -rf "$HOME/modules"
-        echo "   🗑️ Removed: $HOME/modules"
+    echo "      - modules/"
+fi
+
+# Check for .conkyrc (old config format - should be removed)
+if [ -f "$HOME/.conkyrc" ]; then
+    echo "   � Found old .conkyrc file (deprecated format)."
+    if [ "$NONINTERACTIVE" = true ]; then
+        remove_conkyrc="y"
+        echo "   ✅ Non-interactive mode: automatically removing .conkyrc."
+    else
+        read -p "   ❓ Remove old .conkyrc file? (y/n): " remove_conkyrc
+    fi
+    if [[ "$remove_conkyrc" =~ ^[Yy]$ ]]; then
+        rm -f "$HOME/.conkyrc"
+        echo "   🗑️ Removed: $HOME/.conkyrc"
     fi
 fi
 
