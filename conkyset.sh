@@ -174,33 +174,16 @@ source "$(dirname "$0")/modules/gpu.sh"
 # Kill any existing Conky processes
 kill_conky
 
-# Create a single backup timestamp for this run
-BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-
 # Check for previous config files
 if [ -d "$HOME/.config/conky" ]; then
     echo "   📁 Found existing Conky configuration directory."
     if [ "$NONINTERACTIVE" = true ]; then
         clean_config="y"
-        echo "   ✅ Non-interactive mode: automatically selected 'yes' to backup and remove existing configuration."
+        echo "   ✅ Non-interactive mode: automatically selected 'yes' to remove existing configuration."
     else
-        read -p "   ❓ Do you want to backup and remove the existing configuration? (y/n): " clean_config
+        read -p "   ❓ Do you want to remove the existing configuration? (y/n): " clean_config
     fi
     if [[ "$clean_config" =~ ^[Yy]$ ]]; then
-        # Create backup of each file with the format filename.extension.date.time.backup
-        if [ -d "$HOME/.config/conky" ] && [ "$(ls -A "$HOME/.config/conky" 2>/dev/null)" ]; then
-            echo "   📂 Creating backups of configuration files..."
-            # Create backups in the parent directory to avoid deletion
-            for file in "$HOME/.config/conky/"*; do
-                if [ -f "$file" ]; then
-                    filename=$(basename "$file")
-                    backup_path="$HOME/.config/${filename}.${BACKUP_TIMESTAMP}.backup"
-                    cp "$file" "$backup_path" 2>/dev/null
-                    echo "   💾 Backed up: ${filename} → ${filename}.${BACKUP_TIMESTAMP}.backup (in ~/.config/)"
-                fi
-            done
-            echo "   ✅ All configuration files backed up with .${BACKUP_TIMESTAMP}.backup extension"
-        fi
         rm -rf "$HOME/.config/conky"
         echo "   🗑️ Removed old Conky configuration directory."
     else
@@ -211,8 +194,6 @@ fi
 # Check for previous autostart entries
 if [ -f "$HOME/.config/autostart/conky.desktop" ]; then
     echo "   🔄 Found existing Conky autostart entry."
-    cp "$HOME/.config/autostart/conky.desktop" "$HOME/.config/autostart/conky.desktop.${BACKUP_TIMESTAMP}.backup" 2>/dev/null
-    echo "   💾 Existing autostart entry backed up to: conky.desktop.${BACKUP_TIMESTAMP}.backup"
     echo "   ℹ️ The existing entry will be replaced."
 fi
 
@@ -222,15 +203,11 @@ for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/.conkyrc" "$HO
         echo "   📄 Found existing Conky file: $file"
         if [ "$NONINTERACTIVE" = true ]; then
             remove_file="y"
-            echo "   ✅ Non-interactive mode: automatically selected 'yes' to backup and remove the file."
+            echo "   ✅ Non-interactive mode: automatically selected 'yes' to remove the file."
         else
-            read -p "   ❓ Do you want to backup and remove it? (y/n): " remove_file
+            read -p "   ❓ Do you want to remove it? (y/n): " remove_file
         fi
         if [[ "$remove_file" =~ ^[Yy]$ ]]; then
-            # Create backup with filename.extension.date.time.backup format
-            filename=$(basename "$file")
-            cp "$file" "${file}.${BACKUP_TIMESTAMP}.backup" 2>/dev/null
-            echo "   💾 Backed up: ${file} → ${file}.${BACKUP_TIMESTAMP}.backup"
             rm -f "$file"
             echo "   🗑️ Removed: $file"
         fi
@@ -265,13 +242,6 @@ if [ ! -f "conkystartup.sh" ] || [ ! -f "rm-conkyset.sh" ]; then
     exit 1
 else
     echo "Required scripts found in the current directory."
-    # Backup existing scripts if they exist before overwriting
-    for script in "conkystartup.sh" "rm-conkyset.sh"; do
-        if [ -f "$HOME/$script" ]; then
-            cp "$HOME/$script" "$HOME/${script}.${BACKUP_TIMESTAMP}.backup" 2>/dev/null
-            echo "   💾 Existing $script backed up to: $HOME/${script}.${BACKUP_TIMESTAMP}.backup"
-        fi
-    done
     # Copy scripts and modules to home directory
     cp conkystartup.sh "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
     cp rm-conkyset.sh "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
@@ -296,12 +266,6 @@ else
     echo "Conky template configuration file found in the current directory."
     # Create .config/conky directory if it doesn't exist
     mkdir -p "$HOME/.config/conky" || { echo "Failed to create .config/conky directory."; exit 1; }
-
-    # Backup existing conky.conf if it exists
-    if [ -f "$HOME/.config/conky/conky.conf" ]; then
-        cp "$HOME/.config/conky/conky.conf" "$HOME/.config/conky/conky.conf.${BACKUP_TIMESTAMP}.backup" 2>/dev/null
-        echo "   💾 Existing conky.conf backed up to: conky.conf.${BACKUP_TIMESTAMP}.backup"
-    fi
 
     # --- Location detection and prompt ---
     LOCATION=""
