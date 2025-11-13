@@ -1,25 +1,27 @@
 #!/bin/bash
 # Module for update checking and version management
 
-# Version information
-# Read version from VERSION file if it exists, otherwise use fallback
-if [[ -f "$(dirname "$0")/../VERSION" ]]; then
-    CURRENT_VERSION=$(cat "$(dirname "$0")/../VERSION" | tr -d '\n')
+# Get the current version
+get_current_version() {
+    # Read version from VERSION file if it exists, otherwise use fallback
+    if [[ -f "$(dirname "$0")/../VERSION" ]]; then
+        tr -d '\n' < "$(dirname "$0")/../VERSION"
     elif [ -f "$HOME/VERSION" ]; then
-        cat "$HOME/VERSION" | tr -d '\n'
+        tr -d '\n' < "$HOME/VERSION"
     else
         echo "1.9.0"  # Fallback version
     fi
+}
+
+# Version information
+CURRENT_VERSION=$(get_current_version)
+# Version information
+CURRENT_VERSION=$(get_current_version)
 VERSION_CHECK_URL="https://api.github.com/repos/Gyurus/conky-system-set/releases/latest"
 SKIP_VERSION_FILE="$HOME/.conky-system-set-skip-version"
 UPDATE_CHECK_FILE="$HOME/.conky-system-set-last-check"
 UPDATE_CONFIG_FILE="$HOME/.conky-system-set-update-config"
 UPDATE_CHECK_INTERVAL=86400  # 24 hours in seconds
-
-# Get the current version
-get_current_version() {
-    echo "$CURRENT_VERSION"
-}
 
 # Get the latest version from GitHub
 get_latest_version() {
@@ -123,8 +125,11 @@ set_update_config() {
     
     # Update or add the key-value pair
     if grep -q "^${key}=" <<< "$config_content"; then
-        # Update existing key
-        config_content=$(sed "s/^${key}=.*/${key}=${value}/" <<< "$config_content")
+        # Update existing key using parameter expansion
+        local old_line new_line
+        old_line=$(grep "^${key}=" <<< "$config_content")
+        new_line="${key}=${value}"
+        config_content="${config_content//$old_line/$new_line}"
     else
         # Add new key
         config_content="${config_content}${key}=${value}\n"
@@ -250,7 +255,7 @@ show_update_prompt() {
     
     while true; do
         echo -n "   ❓ What would you like to do? [1]: " >&2
-        read choice
+        read -r choice
         
         case "${choice:-1}" in
             1)
@@ -399,11 +404,16 @@ perform_autoupdate() {
 }
 
 check_and_autoupdate() {
+    local silent="${1:-false}"
+    
     # Check if autoupdate is enabled
     local autoupdate_enabled
     autoupdate_enabled=$(get_update_config "autoupdate_enabled" "false")
     
     if [[ "$autoupdate_enabled" != "true" ]]; then
+        if [[ "$silent" != "true" ]]; then
+            echo "   ℹ️  Autoupdate not enabled. Use --enable-autoupdate to enable it."
+        fi
         return 0  # Autoupdate not enabled, skip silently
     fi
     

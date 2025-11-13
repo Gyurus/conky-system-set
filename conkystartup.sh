@@ -26,56 +26,51 @@ echo "$iface" > "$HOME/.config/conky/.conky_iface"
 
 # Replace @@IFACE@@ in conky.conf
 if [ ! -f "$HOME/.config/conky/conky.conf" ]; then
-  echo "Error: Configuration file $HOME/.config/conky/conky.conf not found."
-  exit 1
+    echo "Error: Configuration file $HOME/.config/conky/conky.conf not found."
+    exit 1
 fi
 sed -i "s|@@IFACE@@|$iface|g" "$HOME/.config/conky/conky.conf"
 
-# The template now already contains the Wi-Fi and GPU temperature sections
-# Check if we need to add GPU temperature command
+# Detect and set GPU temperature command if placeholder exists
 if grep -q "@@GPU_TEMP_COMMAND@@" "$HOME/.config/conky/conky.conf"; then
-  echo "Updating GPU temperature command..."
-fi
-
-# Detect and set GPU temperature command
-GPU_COMMAND="echo N/A"
-# NVIDIA
-if command -v nvidia-smi &> /dev/null; then
-    TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null | head -1)
-    if [ -n "$TEMP" ] && [ "$TEMP" -gt 0 ]; then
-        GPU_COMMAND="nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits | head -1 | awk '{print \$1\"°C\"}'"
+    echo "Updating GPU temperature command..."
+    GPU_COMMAND="echo N/A"
+    
+    # NVIDIA
+    if command -v nvidia-smi &> /dev/null; then
+        TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null | head -1)
+        if [ -n "$TEMP" ] && [ "$TEMP" -gt 0 ]; then
+            GPU_COMMAND="nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits | head -1 | awk '{print \$1\"°C\"}'"
+        fi
+    # AMD
+    elif ls /sys/class/hwmon/hwmon*/name 2>/dev/null | xargs grep -l 'amdgpu' &> /dev/null; then
+        AMD_HWMON=$(ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'amdgpu' | head -1)
+        if [ -f "$(dirname "$AMD_HWMON")/temp1_input" ]; then
+            GPU_COMMAND="cat $(dirname "$AMD_HWMON")/temp1_input | awk '{print \$1/1000\"°C\"}'"
+        fi
+    # Intel
+    elif ls /sys/class/hwmon/hwmon*/name 2>/dev/null | xargs grep -l 'i915' &> /dev/null; then
+        INTEL_HWMON=$(ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'i915' | head -1)
+        if [ -f "$(dirname "$INTEL_HWMON")/temp1_input" ]; then
+            GPU_COMMAND="cat $(dirname "$INTEL_HWMON")/temp1_input | awk '{print \$1/1000\"°C\"}'"
+        fi
     fi
-# AMD
-elif ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'amdgpu' &> /dev/null; then
-    AMD_HWMON=$(ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'amdgpu' | head -1)
-    if [ -f "$(dirname "$AMD_HWMON")/temp1_input" ]; then
-        GPU_COMMAND="cat $(dirname "$AMD_HWMON")/temp1_input | awk '{print \$1/1000\"°C\"}'"
-    fi
-# Intel
-elif ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'i915' &> /dev/null; then
-    INTEL_HWMON=$(ls /sys/class/hwmon/hwmon*/name | xargs grep -l 'i915' | head -1)
-    if [ -f "$(dirname "$INTEL_HWMON")/temp1_input" ]; then
-        GPU_COMMAND="cat $(dirname "$INTEL_HWMON")/temp1_input | awk '{print \$1/1000\"°C\"}'"
-    fi
-fi
-
-if [ "$GPU_COMMAND" = "echo N/A" ]; then
+    
     # Fallback to thermal zones if no specific GPU sensor found
-    for thermal in /sys/class/thermal/thermal_zone*/type; do
-        if grep -qE 'x86_pkg_temp|pch' "$thermal"; then
-            continue # Skip CPU package and PCH temps
-        fi
-        TEMP=$(cat "$(dirname "$thermal")/temp")
-        if [ "$TEMP" -gt 0 ]; then
-             GPU_COMMAND="cat $(dirname "$thermal")/temp | awk '{print \$1/1000\"°C\"}'"
-             break
-        fi
-    done
-fi
-
-# Check if we need to update GPU temperature command in conky.conf
-if grep -q "@@GPU_TEMP_COMMAND@@" "$HOME/.config/conky/conky.conf"; then
-    # Escape the command for sed
+    if [ "$GPU_COMMAND" = "echo N/A" ]; then
+        for thermal in /sys/class/thermal/thermal_zone*/type; do
+            if grep -qE 'x86_pkg_temp|pch' "$thermal"; then
+                continue # Skip CPU package and PCH temps
+            fi
+            TEMP=$(cat "$(dirname "$thermal")/temp" 2>/dev/null)
+            if [ -n "$TEMP" ] && [ "$TEMP" -gt 0 ]; then
+                GPU_COMMAND="cat $(dirname "$thermal")/temp | awk '{print \$1/1000\"°C\"}'"
+                break
+            fi
+        done
+    fi
+    
+    # Update GPU temperature command in conky.conf
     escaped_gpu_command=$(printf '%s\n' "$GPU_COMMAND" | sed -e 's/[&\\|]/\\&/g')
     sed -i "s|@@GPU_TEMP_COMMAND@@|$escaped_gpu_command|" "$HOME/.config/conky/conky.conf"
 fi
