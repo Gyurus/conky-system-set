@@ -9,7 +9,7 @@ if [ -f "$SCRIPT_DIR/VERSION" ]; then
 elif [ -f "$HOME/VERSION" ]; then
     SCRIPT_VERSION=$(cat "$HOME/VERSION" | tr -d '\n')
 else
-    SCRIPT_VERSION="1.9.0"  # Fallback version
+    SCRIPT_VERSION="1.9.1"  # Fallback version
 fi
 
 # Script safety features
