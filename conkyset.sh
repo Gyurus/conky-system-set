@@ -237,27 +237,35 @@ echo "════════════════════════�
 # Check if Conky is installed and install if not
 echo "📦 Checking for Conky installation..."
 
-# Check if conkystartup.sh and rm-conkyset.sh are present in this directory and then move them to the home directory
+# Check if conkystartup.sh and rm-conkyset.sh are present in this directory and then copy them to the home directory
 echo "Checking for required scripts in the current directory..."
-if [ ! -f "conkystartup.sh" ] || [ ! -f "rm-conkyset.sh" ]; then
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ ! -f "$SCRIPT_DIR/conkystartup.sh" ] || [ ! -f "$SCRIPT_DIR/rm-conkyset.sh" ]; then
     echo "Required scripts not found in the current directory. Please ensure conkystartup.sh and rm-conkyset.sh are present."
     exit 1
 else
     echo "Required scripts found in the current directory."
-    # Copy scripts and modules to home directory
-    cp conkystartup.sh "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
-    cp rm-conkyset.sh "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
     
-    # Copy modules directory for autoupdate functionality
-    echo "Copying modules directory for autoupdate support..."
-    mkdir -p "$HOME/modules" || { echo "Failed to create modules directory in home."; exit 1; }
-    cp -r modules/* "$HOME/modules/" || { echo "Failed to copy modules to home directory."; exit 1; }
-    
-    # Copy VERSION file for version tracking
-    echo "Copying VERSION file..."
-    cp VERSION "$HOME/VERSION" || { echo "Failed to copy VERSION file to home directory."; exit 1; }
-    
-    echo "Scripts, modules, and VERSION file copied to home directory successfully."    
+    # Only copy if we're not already in home directory
+    if [ "$SCRIPT_DIR" != "$HOME" ]; then
+        # Copy scripts to home directory
+        cp "$SCRIPT_DIR/conkystartup.sh" "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
+        cp "$SCRIPT_DIR/rm-conkyset.sh" "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
+        
+        # Copy modules directory for autoupdate functionality
+        echo "Copying modules directory for autoupdate support..."
+        mkdir -p "$HOME/modules" || { echo "Failed to create modules directory in home."; exit 1; }
+        cp -r "$SCRIPT_DIR/modules/"* "$HOME/modules/" || { echo "Failed to copy modules to home directory."; exit 1; }
+        
+        # Copy VERSION file for version tracking
+        echo "Copying VERSION file..."
+        cp "$SCRIPT_DIR/VERSION" "$HOME/VERSION" || { echo "Failed to copy VERSION file to home directory."; exit 1; }
+        
+        echo "Scripts, modules, and VERSION file copied to home directory successfully."
+    else
+        echo "Already running from home directory - skipping file copy."
+    fi
 fi
 
 # Check if conky.template.conf exists in this directory
