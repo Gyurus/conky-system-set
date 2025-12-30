@@ -9,7 +9,7 @@ if [ -f "$SCRIPT_DIR/VERSION" ]; then
 elif [ -f "$HOME/VERSION" ]; then
     SCRIPT_VERSION=$(cat "$HOME/VERSION" | tr -d '\n')
 else
-    SCRIPT_VERSION="1.9.1"  # Fallback version
+    SCRIPT_VERSION="1.9.2"  # Fallback version
 fi
 
 # Script safety features
@@ -21,38 +21,7 @@ BACKUP_ENABLED=true
 # Color codes for better output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\echo ""
-echo "🔄 Processing autostart entries..."
-safe_remove "$HOME/.config/autostart/conky.desktop" "Autostart entry" || ((removal_errors++))
-
-# Check if autostart directory is now empty and was likely created for conky
-if [ -d "$HOME/.config/autostart" ]; then
-    local autostart_file_count=$(find "$HOME/.config/autostart" -type f | wc -l)
-    if [ "$autostart_file_count" -eq 0 ]; then
-        if [ "$DRY_RUN" = true ]; then
-            print_status "info" "DRY RUN: Autostart directory is empty, would consider removing"
-        elif [ "$FORCE_REMOVAL" = false ]; then
-            echo ""
-            read -p "   ❓ Autostart directory is empty. Remove it? (y/N): " confirm_autostart_dir
-            if [[ "$confirm_autostart_dir" =~ ^[Yy]$ ]]; then
-                if rmdir "$HOME/.config/autostart" 2>/dev/null; then
-                    print_status "success" "Empty autostart directory removed"
-                else
-                    print_status "warning" "Could not remove autostart directory"
-                fi
-            else
-                print_status "info" "Keeping empty autostart directory (user choice)"
-            fi
-        else
-            # Force removal - remove if empty
-            if rmdir "$HOME/.config/autostart" 2>/dev/null; then
-                print_status "success" "Empty autostart directory removed"
-            fi
-        fi
-    else
-        print_status "info" "Autostart directory contains $autostart_file_count other file(s), keeping"
-    fi
-fi[1;33m'
+YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 

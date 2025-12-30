@@ -9,7 +9,7 @@ get_current_version() {
     elif [ -f "$HOME/VERSION" ]; then
         tr -d '\n' < "$HOME/VERSION"
     else
-        echo "1.9.1"  # Fallback version
+        echo "1.9.2"  # Fallback version
     fi
 }
 

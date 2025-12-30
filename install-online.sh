@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/VERSION" ]; then
     INSTALLER_VERSION=$(cat "$SCRIPT_DIR/VERSION" | tr -d '\n')
 else
-    INSTALLER_VERSION="1.9.1"  # Fallback version
+    INSTALLER_VERSION="1.9.2"  # Fallback version
 fi
 
 # Ensure we can read from terminal even when piped from curl
@@ -237,10 +237,10 @@ download_essential_files() {
     echo ""
     print_info "Downloaded: $success_count files, Failed: $fail_count files"
     
-    if [ $fail_count -gt 0 ]; then
+    if [ "$fail_count" -gt 0 ]; then
         print_warning "Some files failed to download"
         echo -n "Continue anyway? (y/N): "
-        read continue_choice
+        read -r continue_choice
         if [[ ! "$continue_choice" =~ ^[Yy]$ ]]; then
             return 1
         fi
@@ -253,7 +253,7 @@ download_essential_files() {
 download_all_files() {
     print_step "Would you like to download ALL files including tests and docs?"
     echo -n "This includes test scripts, documentation, etc. (y/N): "
-    read download_all
+    read -r download_all
     
     if [[ ! "$download_all" =~ ^[Yy]$ ]]; then
         print_info "Skipping optional files"
@@ -388,7 +388,7 @@ check_previous_installation() {
     echo ""
     
     echo -n "Remove previous installation and continue? (Y/n): "
-    read remove_prev
+    read -r remove_prev
     
     if [[ "$remove_prev" =~ ^[Nn]$ ]]; then
         print_info "Installation cancelled"
@@ -478,7 +478,7 @@ setup_home_links() {
     echo "  2. Copy scripts to home directory (not recommended)"
     echo "  3. Skip (access from install directory only)"
     echo -n "Choice [1]: "
-    read setup_choice
+    read -r setup_choice
     
     case "$setup_choice" in
         2)
@@ -486,7 +486,7 @@ setup_home_links() {
             print_warning "⚠️  WARNING: Copying breaks module loading!"
             print_warning "Modules directory will not be accessible"
             echo -n "Are you sure? (y/N): "
-            read confirm_copy
+            read -r confirm_copy
             if [[ ! "$confirm_copy" =~ ^[Yy]$ ]]; then
                 print_info "Switching to symlinks instead..."
                 ln -sf "$INSTALL_DIR/conkyset.sh" "$HOME/conkyset.sh"
@@ -571,7 +571,7 @@ main() {
     check_previous_installation
     
     echo -n "Continue with installation? (Y/n): "
-    read confirm
+    read -r confirm
     if [[ "$confirm" =~ ^[Nn]$ ]]; then
         print_info "Installation cancelled"
         exit 0
@@ -607,7 +607,7 @@ main() {
     # Offer to run setup immediately
     echo ""
     echo -n "Would you like to run the setup now? (y/N): "
-    read run_now
+    read -r run_now
     if [[ "$run_now" =~ ^[Yy]$ ]]; then
         echo ""
         print_info "Starting Conky setup..."

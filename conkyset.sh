@@ -113,7 +113,7 @@ get_current_version_for_display() {
     if [[ -f "$(dirname "$0")/VERSION" ]]; then
         cat "$(dirname "$0")/VERSION" | tr -d '\n'
     else
-        echo "1.8.6"  # Fallback version
+        echo "1.9.2"  # Fallback version
     fi
 }
 
