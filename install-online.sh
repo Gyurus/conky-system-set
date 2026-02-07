@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/VERSION" ]; then
     INSTALLER_VERSION=$(cat "$SCRIPT_DIR/VERSION" | tr -d '\n')
 else
-    INSTALLER_VERSION="1.9.2"  # Fallback version
+    INSTALLER_VERSION="unknown"  # Fallback version
 fi
 
 # Ensure we can read from terminal even when piped from curl

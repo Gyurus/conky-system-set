@@ -3,7 +3,7 @@
 ## Project Overview
 Conky System Set is a comprehensive Bash-based Linux system monitor that provides auto-configuration, multi-monitor support, and weather integration. The system uses a **template-and-placeholder architecture** where `conky.template.conf` contains placeholders (e.g., `@@IFACE@@`, `@@GPU_TEMP_COMMAND@@`) that are replaced at runtime with detected hardware values.
 
-**Current Version:** Tracked in `VERSION` file (currently 1.9.2)
+**Current Version:** Tracked in `VERSION` file
 
 ## Critical Architecture
 
@@ -83,10 +83,10 @@ Positioning logic in `modules/monitor.sh` calculates gap_x/gap_y based on:
 - Example: `gap_x = monitor_width - 320 - 10` for top_right
 
 ### Version Management
-- Version stored as single line in `VERSION` file (e.g., "1.9.2\n")
+- Version stored as single line in `VERSION` file (e.g., "1.9.3\n")
 - Update via `./update_version.sh <version>` which updates VERSION + README title
 - **Never hardcode version numbers** in scripts (read from VERSION file)
-- GitHub releases use `v` prefix (v1.9.2), internal version has no prefix (1.9.2)
+- GitHub releases use `v` prefix (v1.9.3), internal version has no prefix (1.9.3)
 
 ## Testing & Debugging
 

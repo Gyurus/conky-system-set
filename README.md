@@ -1,4 +1,4 @@
-# Conky System Set v1.9.3
+# Conky System Set v2.0.0
 
 A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, complete setup automation, and **one-command online installation**.
 
@@ -248,7 +248,7 @@ The system includes intelligent update checking with **automatic update capabili
 
 ### Autoupdate Configuration
 
-The autoupdate feature can be controlled via command-line options:
+The autoupdate feature is enabled by default and can be controlled via command-line options:
 
 ```bash
 # Enable autoupdate during setup

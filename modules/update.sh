@@ -9,12 +9,10 @@ get_current_version() {
     elif [ -f "$HOME/VERSION" ]; then
         tr -d '\n' < "$HOME/VERSION"
     else
-        echo "1.9.2"  # Fallback version
+        echo "unknown"  # Fallback version
     fi
 }
 
-# Version information
-CURRENT_VERSION=$(get_current_version)
 # Version information
 CURRENT_VERSION=$(get_current_version)
 VERSION_CHECK_URL="https://api.github.com/repos/Gyurus/conky-system-set/releases/latest"
@@ -61,6 +59,14 @@ version_compare() {
     # Remove 'v' prefix and any suffixes like '-dev'
     v1=$(echo "$v1" | sed 's/^v//' | sed 's/-.*$//')
     v2=$(echo "$v2" | sed 's/^v//' | sed 's/-.*$//')
+
+    if ! is_semver "$v1" && ! is_semver "$v2"; then
+        return 1
+    elif ! is_semver "$v1"; then
+        return 0
+    elif ! is_semver "$v2"; then
+        return 1
+    fi
     
     # Split versions into arrays
     IFS='.' read -ra v1_parts <<< "$v1"
@@ -81,6 +87,12 @@ version_compare() {
     done
     
     return 1  # v1 == v2
+}
+
+# Validate a simple semver-like version (digits and dots)
+is_semver() {
+    local v="$1"
+    [[ "$v" =~ ^[0-9]+(\.[0-9]+)*$ ]]
 }
 
 # Check if version should be skipped
@@ -207,9 +219,6 @@ check_for_updates() {
         return 1
     fi
     
-    # Update check timestamp
-    update_check_timestamp
-    
     local current_version
     current_version=$(get_current_version)
     
@@ -237,6 +246,9 @@ check_for_updates() {
     else
         echo "   ✅ You have the latest version!"
     fi
+
+    # Update check timestamp after a successful check
+    update_check_timestamp
 }
 
 # Show update prompt to user
@@ -408,7 +420,7 @@ check_and_autoupdate() {
     
     # Check if autoupdate is enabled
     local autoupdate_enabled
-    autoupdate_enabled=$(get_update_config "autoupdate_enabled" "false")
+    autoupdate_enabled=$(get_update_config "autoupdate_enabled" "true")
     
     if [[ "$autoupdate_enabled" != "true" ]]; then
         if [[ "$silent" != "true" ]]; then
