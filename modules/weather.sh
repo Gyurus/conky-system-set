@@ -86,3 +86,65 @@ get_weather_location() {
     echo "   📍 Weather location: $location"
     echo "$location"
 }
+
+# Auto-detect location via IP and return a safe default on failure.
+detect_weather_location() {
+    local fallback="Budapest,HU"
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "$fallback"
+        return
+    fi
+    local info city country
+    info=$(curl -s ipinfo.io 2>/dev/null)
+    city=$(echo "$info" | grep '"city"' | sed 's/.*"city": "\([^"]*\)".*/\1/')
+    country=$(echo "$info" | grep '"country"' | sed 's/.*"country": "\([^"]*\)".*/\1/')
+    if [ -n "$city" ] && [ -n "$country" ]; then
+        echo "${city},${country}"
+    else
+        echo "$fallback"
+    fi
+}
+
+# Check that wttr.in responds with usable data for the location.
+check_weather_location() {
+    local location="$1"
+    if [ -z "$location" ]; then
+        return 1
+    fi
+    if ! command -v curl >/dev/null 2>&1; then
+        return 1
+    fi
+    local resp
+    resp=$(curl -s --max-time 5 "https://wttr.in/${location}?format=%t" 2>/dev/null)
+    if [ -z "$resp" ]; then
+        return 1
+    fi
+    echo "$resp" | grep -qi "unknown location\|not found\|error" && return 1
+    return 0
+}
+
+# Persist the chosen location for startup updates.
+save_weather_location() {
+    local location="$1"
+    if [ -z "$location" ]; then
+        return 1
+    fi
+    mkdir -p "$HOME/.config/conky"
+    echo "$location" > "$HOME/.config/conky/.conky_location"
+}
+
+# Update the weather location in the active config file.
+update_weather_location_in_config() {
+    local config_file="$1"
+    local new_location="$2"
+    if [ -z "$config_file" ] || [ -z "$new_location" ] || [ ! -f "$config_file" ]; then
+        return 1
+    fi
+    local escaped_location
+    escaped_location=$(printf '%s\n' "$new_location" | sed -e 's/[&\\|]/\\&/g')
+    sed -i \
+        -e "s|Weather: [^\$]*|Weather: ${escaped_location}|g" \
+        -e "s|wttr.in/[^?"']*|wttr.in/${escaped_location}|g" \
+        -e "s|@@LOCATION@@|${escaped_location}|g" \
+        "$config_file"
+}

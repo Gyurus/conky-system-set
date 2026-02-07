@@ -14,6 +14,11 @@ if [ -f "$SCRIPT_DIR/modules/update.sh" ]; then
     echo ""
 fi
 
+# Load weather helpers for location updates
+if [ -f "$SCRIPT_DIR/modules/weather.sh" ]; then
+    source "$SCRIPT_DIR/modules/weather.sh"
+fi
+
 # Detect active interface: prefer Ethernet, fallback to Wi-Fi
 iface=$(ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; exit}')
 [ -z "$iface" ] && iface=$(nmcli device status | awk '$3 == "connected" && $2 == "wifi" {print $1; exit}')
@@ -28,6 +33,25 @@ echo "$iface" > "$HOME/.config/conky/.conky_iface"
 if [ ! -f "$HOME/.config/conky/conky.conf" ]; then
     echo "Error: Configuration file $HOME/.config/conky/conky.conf not found."
     exit 1
+fi
+
+# Update weather location from saved preference (supports auto mode)
+if [ -f "$HOME/.config/conky/.conky_location" ]; then
+    saved_location=$(tr -d '\n' < "$HOME/.config/conky/.conky_location")
+    if [ -n "$saved_location" ] && command -v detect_weather_location >/dev/null 2>&1; then
+        if [[ "$saved_location" =~ ^[Aa][Uu][Tt][Oo]$ ]]; then
+            resolved_location=$(detect_weather_location)
+            echo "🌐 Auto-detected weather location: $resolved_location"
+        else
+            resolved_location="$saved_location"
+        fi
+        update_weather_location_in_config "$HOME/.config/conky/conky.conf" "$resolved_location"
+        if check_weather_location "$resolved_location"; then
+            echo "✅ Weather location check passed"
+        else
+            echo "⚠️  Weather check failed for '$resolved_location'"
+        fi
+    fi
 fi
 sed -i "s|@@IFACE@@|$iface|g" "$HOME/.config/conky/conky.conf"
 

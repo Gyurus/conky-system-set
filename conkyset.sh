@@ -6,6 +6,7 @@ show_help() {
     echo "  -y, --yes        Non-interactive mode (auto-confirm prompts)"
     echo "      --no-gpu     Skip GPU detection and installation steps"
     echo "      --auto-location  Auto-detect weather location (skip prompt)"
+    echo "      --set-location   Update weather location after install (city,country or 'auto')"
     echo "      --nosensor   Skip thermal sensor checks and installs"
     echo "      --position   Window position (top_right, top_left, bottom_right, bottom_left, center)"
     echo "      --monitor    Force specific monitor by name (e.g., DP-1, HDMI-A-1)"
@@ -22,6 +23,7 @@ show_help() {
 NONINTERACTIVE=false
 SKIP_GPU=false
 AUTO_LOCATION=false
+SET_LOCATION=""
 SKIP_SENSOR=false
 POSITION_PREFERENCE="top_right"
 FORCE_MONITOR=""
@@ -50,6 +52,12 @@ while [[ $# -gt 0 ]]; do
         --auto-location)
             AUTO_LOCATION=true
             echo "   ℹ️  Auto-location enabled (skip manual weather prompt)."
+            shift
+            ;;
+        --set-location)
+            shift
+            SET_LOCATION="$1"
+            echo "   ℹ️  Location change requested: $SET_LOCATION"
             shift
             ;;
         --nosensor)
@@ -107,6 +115,33 @@ done
 
 # Load modules early for update check
 source "$(dirname "$0")/modules/update.sh"
+
+# Handle quick location update mode
+if [ -n "$SET_LOCATION" ]; then
+    source "$(dirname "$0")/modules/weather.sh"
+    CONFIG_FILE="$HOME/.config/conky/conky.conf"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "❌ Config file not found: $CONFIG_FILE"
+        echo "   Run ./conkyset.sh first to install and configure Conky."
+        exit 1
+    fi
+    if [[ "$SET_LOCATION" =~ ^[Aa][Uu][Tt][Oo]$ ]]; then
+        resolved_location=$(detect_weather_location)
+        save_weather_location "auto"
+        echo "🌐 Auto-detected weather location: $resolved_location"
+    else
+        resolved_location="$SET_LOCATION"
+        save_weather_location "$resolved_location"
+    fi
+    update_weather_location_in_config "$CONFIG_FILE" "$resolved_location"
+    if check_weather_location "$resolved_location"; then
+        echo "✅ Weather location check passed"
+    else
+        echo "⚠️  Weather check failed for '$resolved_location'"
+    fi
+    echo "✅ Weather location updated."
+    exit 0
+fi
 
 # Get current version for display
 get_current_version_for_display() {
@@ -280,6 +315,7 @@ else
     # --- Location detection and prompt ---
     LOCATION=""
     DETECTED_LOCATION=""
+    LOCATION_MODE="manual"
 
     echo "🌍 Weather location setup:"
     MAX_ATTEMPTS=2
@@ -341,6 +377,7 @@ else
     # Respect --auto-location by skipping manual prompt
     if [ "$AUTO_LOCATION" = true ]; then
         set_location="n"
+        LOCATION_MODE="auto"
         echo "   ℹ️  Auto-location enabled (manual prompt disabled)."
     fi
 
@@ -365,6 +402,12 @@ else
             if [ -z "$LOCATION" ]; then
                 LOCATION="$DETECTED_LOCATION"
                 echo "   ✅ Using detected location: $LOCATION"
+                break
+            fi
+            if [[ "$LOCATION" =~ ^[Aa][Uu][Tt][Oo]$ ]]; then
+                LOCATION_MODE="auto"
+                echo "   🌐 Auto location selected."
+                LOCATION="$DETECTED_LOCATION"
                 break
             fi
             validate_location "$LOCATION"
@@ -437,6 +480,20 @@ else
     if [ -z "$LOCATION" ]; then
         LOCATION="Budapest,HU"
         echo "   ℹ️  Defaulting to: $LOCATION"
+    fi
+    if [ "$LOCATION_MODE" = "auto" ]; then
+        LOCATION=$(detect_weather_location)
+        echo "   🌐 Auto location resolved to: $LOCATION"
+    fi
+    if check_weather_location "$LOCATION"; then
+        echo "   ✅ Weather location check passed"
+    else
+        echo "   ⚠️  Weather check failed for '$LOCATION' (Conky will still use it)"
+    fi
+    if [ "$LOCATION_MODE" = "auto" ]; then
+        save_weather_location "auto"
+    else
+        save_weather_location "$LOCATION"
     fi
     # Show the final location used for weather
     echo "   📍 Weather location set to: $LOCATION"
@@ -1145,6 +1202,7 @@ echo "📝 To check if Conky is running: pgrep conky"
 echo "📝 To check Conky logs, see terminal output or log files if configured."
 echo "📝 To check Conky configuration: conky -c $HOME/.config/conky/conky.conf"
 echo "📝 To check Conky version: conky --version"
+echo "📝 To change weather location later: ./conkyset.sh --set-location auto|City,CC"
 echo "Have fun! - Gyurus"
 
 # Add clear feedback and prompt before starting Conky

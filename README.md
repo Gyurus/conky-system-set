@@ -1,4 +1,4 @@
-# Conky System Set v1.9.2
+# Conky System Set v1.9.3
 
 A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, complete setup automation, and **one-command online installation**.
 
@@ -102,6 +102,7 @@ For detailed online installation options, see [ONLINE_INSTALL.md](ONLINE_INSTALL
 - `--position` - Window position: top_right, top_left, bottom_right, bottom_left, center
 - `--monitor` - Force specific monitor by name (e.g., DP-1, HDMI-A-1)
 - `--auto-location` - Auto-detect weather location
+- `--set-location` - Update weather location after install (city,country or auto)
 - `--no-gpu` - Skip GPU detection
 - `--nosensor` - Skip thermal sensor checks
 - `--check-updates` - Check for updates and prompt user
