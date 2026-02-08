@@ -199,6 +199,9 @@ if [[ "$SKIP_UPDATE_CHECK" != true ]]; then
         check_for_updates "false" "$NONINTERACTIVE"
     fi
     echo ""
+else
+    echo "⏭️  Update check skipped (--skip-update-check was set)"
+    echo ""
 fi
 
 # linux
