@@ -594,13 +594,21 @@ else
     # Substitute all placeholders in the template using safe escaping
     # First escape any special characters in the variables
     IFACE_ESCAPED=$(printf '%s\n' "$IFACE" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    
+    # For location: escape for sed, but also prepare URL-encoded version
     LOCATION_ESCAPED=$(printf '%s\n' "$LOCATION" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    # URL-encode location for wttr.in API (use sed since jq may not be available)
+    LOCATION_URL_ENCODED=$(printf '%s' "$LOCATION" | sed 's/ /+/g; s/,/%2C/g; s/á/a/g; s/é/e/g; s/í/i/g; s/ó/o/g; s/ú/u/g; s/à/a/g; s/è/e/g; s/ì/i/g; s/ò/o/g; s/ù/u/g')
+    LOCATION_URL_ESCAPED=$(printf '%s\n' "$LOCATION_URL_ENCODED" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    
     MONITOR_INDEX_ESCAPED=$(printf '%s\n' "$MONITOR_INDEX" | sed 's/[[\.*^$()+?{|]/\\&/g')
     ALIGNMENT_ESCAPED=$(printf '%s\n' "$ALIGNMENT" | sed 's/[[\.*^$()+?{|]/\\&/g')
     GAP_X_ESCAPED=$(printf '%s\n' "$GAP_X" | sed 's/[[\.*^$()+?{|]/\\&/g')
     GAP_Y_ESCAPED=$(printf '%s\n' "$GAP_Y" | sed 's/[[\.*^$()+?{|]/\\&/g')
     
     sed -e "s|@@IFACE@@|${IFACE_ESCAPED}|g" \
+        -e "s|wttr\.in/[^?]*|wttr.in/${LOCATION_URL_ESCAPED}|g" \
+        -e "s|Weather: [^\$]*|Weather: ${LOCATION_ESCAPED}|g" \
         -e "s|@@LOCATION@@|${LOCATION_ESCAPED}|g" \
         -e "s|@@MONITOR@@|${MONITOR_INDEX_ESCAPED}|g" \
         -e "s|@@ALIGNMENT@@|${ALIGNMENT_ESCAPED}|g" \
