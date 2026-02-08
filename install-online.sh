@@ -341,6 +341,7 @@ download_essential_files() {
         "README.md"
         "modules/update.sh"
         "modules/monitor.sh"
+        "modules/monitor-watch.sh"
         "modules/iface.sh"
         "modules/weather.sh"
         "modules/gpu.sh"
