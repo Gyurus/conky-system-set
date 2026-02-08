@@ -454,17 +454,19 @@ validate_downloaded_scripts() {
 ensure_version_file() {
     print_step "Verifying VERSION file..."
     
+    # Try to get version from INSTALLER_VERSION first
+    local fallback_version="${INSTALLER_VERSION:-2.0.2}"
+    
     # Check if VERSION file exists
     if [ ! -f "$INSTALL_DIR/VERSION" ]; then
-        print_warning "VERSION file not found, creating with fallback version"
-        # Create VERSION file with reasonable fallback
-        echo "2.0.1" > "$INSTALL_DIR/VERSION"
+        print_warning "VERSION file not found, creating with version: $fallback_version"
+        echo "$fallback_version" > "$INSTALL_DIR/VERSION"
     fi
     
     # Verify VERSION file has content
     if [ ! -s "$INSTALL_DIR/VERSION" ]; then
-        print_warning "VERSION file is empty, setting to fallback version"
-        echo "2.0.1" > "$INSTALL_DIR/VERSION"
+        print_warning "VERSION file is empty, setting to version: $fallback_version"
+        echo "$fallback_version" > "$INSTALL_DIR/VERSION"
     fi
     
     # Validate VERSION format (should be semver-like: X.Y.Z)
@@ -472,8 +474,14 @@ ensure_version_file() {
     version=$(cat "$INSTALL_DIR/VERSION" | tr -d '\n' | tr -d ' ')
     
     if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        print_warning "VERSION format invalid, resetting to fallback"
-        echo "2.0.1" > "$INSTALL_DIR/VERSION"
+        print_warning "VERSION format invalid, resetting to: $fallback_version"
+        echo "$fallback_version" > "$INSTALL_DIR/VERSION"
+    fi
+    
+    # Verify file exists after all operations
+    if [ ! -f "$INSTALL_DIR/VERSION" ]; then
+        print_error "VERSION file creation failed"
+        return 1
     fi
     
     print_success "VERSION file verified: $(cat "$INSTALL_DIR/VERSION")"
