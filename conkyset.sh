@@ -37,6 +37,7 @@ AUTO_LOCATION=false
 SET_LOCATION=""
 SKIP_SENSOR=false
 POSITION_PREFERENCE="top_right"
+POSITION_SET_VIA_CLI=false
 FORCE_MONITOR=""
 CHECK_UPDATES_ONLY=false
 FORCE_UPDATE_CHECK=false
@@ -80,6 +81,7 @@ while [[ $# -gt 0 ]]; do
             shift
             if [[ "$1" =~ ^(top_right|top_left|bottom_right|bottom_left|center)$ ]]; then
                 POSITION_PREFERENCE="$1"
+                POSITION_SET_VIA_CLI=true
                 echo "   ℹ️  Window position set to: $1"
             else
                 echo "   ⚠️  Invalid position '$1'. Using default: top_right"
@@ -534,6 +536,34 @@ else
 
     # Detect connected monitors and configure positioning
     echo "   🔍 Detecting monitors and calculating positioning..."
+    
+    # Ask for position preference if not set via CLI and not in non-interactive mode
+    if [[ "$POSITION_SET_VIA_CLI" == false ]] && [[ "$NONINTERACTIVE" == false ]]; then
+        echo ""
+        echo "   📍 Select window position for Conky:"
+        echo "      [1] Top Right (default)"
+        echo "      [2] Top Left"
+        echo "      [3] Bottom Right"
+        echo "      [4] Bottom Left"
+        echo "      [5] Center"
+        echo -n "   Enter choice [1-5, default: 1]: "
+        read position_choice
+        
+        case "$position_choice" in
+            2) POSITION_PREFERENCE="top_left" ;;
+            3) POSITION_PREFERENCE="bottom_right" ;;
+            4) POSITION_PREFERENCE="bottom_left" ;;
+            5) POSITION_PREFERENCE="center" ;;
+            1|"") POSITION_PREFERENCE="top_right" ;;
+            *) 
+                echo "   ⚠️  Invalid choice. Using default: top_right"
+                POSITION_PREFERENCE="top_right"
+                ;;
+        esac
+        echo "   ✅ Position selected: $POSITION_PREFERENCE"
+        echo ""
+    fi
+    
     MONITOR_CONFIG=$(get_monitor_config "$NONINTERACTIVE" "$POSITION_PREFERENCE")
     
     # Parse the configuration: index:alignment:gap_x:gap_y
