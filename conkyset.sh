@@ -212,6 +212,7 @@ echo "════════════════════════�
 # Load modules
 source "$SCRIPT_DIR/modules/process.sh"
 source "$SCRIPT_DIR/modules/monitor.sh"
+source "$SCRIPT_DIR/modules/monitor-watch.sh"
 source "$SCRIPT_DIR/modules/iface.sh"
 source "$SCRIPT_DIR/modules/weather.sh"
 source "$SCRIPT_DIR/modules/gpu.sh"
@@ -578,6 +579,15 @@ else
     if ! tail -n 1 "$HOME/.config/conky/conky.conf" | grep -qE '\]\];\s*$'; then
         echo ']];' >> "$HOME/.config/conky/conky.conf"
     fi
+    
+    # Save monitor preference for dynamic adjustment when monitors change
+    echo "$POSITION_PREFERENCE" > "$HOME/.config/conky/.monitor_preference"
+    
+    # Initialize monitor snapshot for change detection
+    if command -v get_monitor_snapshot >/dev/null 2>&1; then
+        get_monitor_snapshot > "$HOME/.config/conky/.monitor_snapshot"
+    fi
+    
     echo "   ✅ Configuration file created successfully:"
     echo "      Interface: $IFACE"
     echo "      Location: $LOCATION" 

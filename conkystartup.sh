@@ -19,6 +19,14 @@ else
     echo "[$(date)] Using relative path directory: $INSTALL_DIR"
 fi
 
+# Load monitor-watch module for dynamic monitor detection
+if [ -f "$INSTALL_DIR/modules/monitor-watch.sh" ]; then
+    source "$INSTALL_DIR/modules/monitor-watch.sh"
+    echo "[$(date)] Loaded monitor-watch module"
+else
+    echo "[$(date)] WARNING: Monitor-watch module not found at $INSTALL_DIR/modules/monitor-watch.sh"
+fi
+
 # Load update module for autoupdate functionality
 if [ -f "$INSTALL_DIR/modules/update.sh" ]; then
     source "$INSTALL_DIR/modules/update.sh"
@@ -38,6 +46,24 @@ if [ -f "$INSTALL_DIR/modules/weather.sh" ]; then
     echo "[$(date)] Loaded weather module"
 else
     echo "[$(date)] WARNING: Weather module not found at $INSTALL_DIR/modules/weather.sh"
+fi
+
+# Check for monitor changes and adjust Conky if needed
+if [ -f "$HOME/.config/conky/conky.conf" ]; then
+    echo "[$(date)] Checking for monitor layout changes..."
+    
+    # Load saved position preference (default to top_right)
+    POSITION_PREF="top_right"
+    if [ -f "$HOME/.config/conky/.monitor_preference" ]; then
+        POSITION_PREF=$(cat "$HOME/.config/conky/.monitor_preference")
+    fi
+    
+    # Handle monitor changes (will reload Conky if layout changed)
+    if command -v handle_monitor_changes >/dev/null 2>&1; then
+        handle_monitor_changes "$HOME/.config/conky/conky.conf" "$INSTALL_DIR" "$POSITION_PREF"
+    fi
+else
+    echo "[$(date)] Configuration file not yet created, will generate at launch"
 fi
 
 # Detect active interface: prefer Ethernet, fallback to Wi-Fi
