@@ -162,36 +162,13 @@ calculate_position() {
     esac
     
     # For multi-monitor setups, we need to account for monitor offset
+    # When using xinerama_head, alignment and gaps are relative to that monitor
+    # NOT absolute screen coordinates, so we keep alignment as-is
     if [[ "${MONITOR_INFO[count]:-0}" -gt 1 ]]; then
-        case "$alignment" in
-            "top_left"|"bottom_left")
-                gap_x=$((pos_x + gap_x))
-                ;;
-            "top_right"|"bottom_right")
-                # For right-aligned, convert to left-based absolute positioning
-                gap_x=$((pos_x + width - conky_width - gap_x))
-                # Ensure gap_x is not negative
-                if [[ $gap_x -lt 0 ]]; then
-                    gap_x=$pos_x
-                fi
-                ;;
-        esac
-        
-        case "$alignment" in
-            "bottom_left"|"bottom_right")
-                gap_y=$((pos_y + height - conky_height - gap_y))
-                # Ensure gap_y is not negative
-                if [[ $gap_y -lt 0 ]]; then
-                    gap_y=$pos_y
-                fi
-                ;;
-            "top_left"|"top_right"|"center")
-                gap_y=$((pos_y + gap_y))
-                ;;
-        esac
-        
-        # For multi-monitor setups, use top_left with absolute positioning
-        alignment="top_left"
+        # With xinerama_head specified, gaps are relative to the selected monitor
+        # No conversion needed - Conky handles the monitor-relative positioning
+        # Just ensure gaps are properly set for the selected monitor
+        :  # No changes needed for alignment or gap values when using xinerama_head
     fi
     
     echo "$alignment:$gap_x:$gap_y"
