@@ -32,9 +32,24 @@ if [ -f "$INSTALL_DIR/modules/update.sh" ]; then
     source "$INSTALL_DIR/modules/update.sh"
     echo "[$(date)] Loaded update module"
     
-    # Check for updates and auto-update if enabled
+    # Check for automatic updates and apply if enabled
     echo "[$(date)] Checking for automatic updates..."
-    check_and_autoupdate "false"
+    
+    # Get auto-update setting (defaults to true if not configured)
+    AUTOUPDATE_ENABLED=$(get_update_config "autoupdate_enabled" "true")
+    
+    if [[ "$AUTOUPDATE_ENABLED" == "true" ]]; then
+        echo "[$(date)] Auto-update is ENABLED - checking for updates..."
+        # Pass "false" to show output (not silent mode)
+        if check_and_autoupdate "false"; then
+            echo "[$(date)] ✅ Auto-update check completed"
+        else
+            echo "[$(date)] ⚠️  Auto-update check finished with warnings"
+        fi
+    else
+        echo "[$(date)] Auto-update is DISABLED - skipping update check"
+        echo "[$(date)] To enable auto-updates, run: ./conkyset.sh --enable-autoupdate"
+    fi
     echo ""
 else
     echo "[$(date)] WARNING: Update module not found at $INSTALL_DIR/modules/update.sh"
