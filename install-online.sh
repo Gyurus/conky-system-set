@@ -450,6 +450,35 @@ validate_downloaded_scripts() {
     return 0
 }
 
+# Ensure VERSION file exists with valid content
+ensure_version_file() {
+    print_step "Verifying VERSION file..."
+    
+    # Check if VERSION file exists
+    if [ ! -f "$INSTALL_DIR/VERSION" ]; then
+        print_warning "VERSION file not found, creating with fallback version"
+        # Create VERSION file with reasonable fallback
+        echo "2.0.1" > "$INSTALL_DIR/VERSION"
+    fi
+    
+    # Verify VERSION file has content
+    if [ ! -s "$INSTALL_DIR/VERSION" ]; then
+        print_warning "VERSION file is empty, setting to fallback version"
+        echo "2.0.1" > "$INSTALL_DIR/VERSION"
+    fi
+    
+    # Validate VERSION format (should be semver-like: X.Y.Z)
+    local version
+    version=$(cat "$INSTALL_DIR/VERSION" | tr -d '\n' | tr -d ' ')
+    
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        print_warning "VERSION format invalid, resetting to fallback"
+        echo "2.0.1" > "$INSTALL_DIR/VERSION"
+    fi
+    
+    print_success "VERSION file verified: $(cat "$INSTALL_DIR/VERSION")"
+}
+
 # Make scripts executable
 set_permissions() {
     print_step "Setting executable permissions..."
@@ -789,6 +818,9 @@ main() {
     if ! validate_downloaded_scripts; then
         exit 1
     fi
+    
+    echo ""
+    ensure_version_file
     
     echo ""
     set_permissions
