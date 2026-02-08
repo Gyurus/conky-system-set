@@ -168,13 +168,22 @@ calculate_position() {
                 gap_x=$((pos_x + gap_x))
                 ;;
             "top_right"|"bottom_right")
+                # For right-aligned, convert to left-based absolute positioning
                 gap_x=$((pos_x + width - conky_width - gap_x))
+                # Ensure gap_x is not negative
+                if [[ $gap_x -lt 0 ]]; then
+                    gap_x=$pos_x
+                fi
                 ;;
         esac
         
         case "$alignment" in
             "bottom_left"|"bottom_right")
                 gap_y=$((pos_y + height - conky_height - gap_y))
+                # Ensure gap_y is not negative
+                if [[ $gap_y -lt 0 ]]; then
+                    gap_y=$pos_y
+                fi
                 ;;
             "top_left"|"top_right"|"center")
                 gap_y=$((pos_y + gap_y))
