@@ -161,14 +161,41 @@ calculate_position() {
             ;;
     esac
     
-    # For multi-monitor setups, we need to account for monitor offset
-    # When using xinerama_head, alignment and gaps are relative to that monitor
-    # NOT absolute screen coordinates, so we keep alignment as-is
+    # For multi-monitor setups with xinerama_head
+    # When using xinerama_head=N to target a specific monitor, alignment like "top_right"
+    # is interpreted relative to the ENTIRE virtual screen, not just that monitor.
+    # We need to convert to absolute screen positioning for correct placement.
     if [[ "${MONITOR_INFO[count]:-0}" -gt 1 ]]; then
-        # With xinerama_head specified, gaps are relative to the selected monitor
-        # No conversion needed - Conky handles the monitor-relative positioning
-        # Just ensure gaps are properly set for the selected monitor
-        :  # No changes needed for alignment or gap values when using xinerama_head
+        case "$alignment" in
+            "top_left")
+                # Top-left: pos_x and pos_y are the monitor offsets + margin
+                gap_x=$((pos_x + gap_x))
+                gap_y=$((pos_y + gap_y))
+                ;;
+            "top_right")
+                # Top-right: align to the right edge of the monitor
+                gap_x=$((pos_x + width - conky_width - gap_x))
+                gap_y=$((pos_y + gap_y))
+                ;;
+            "bottom_left")
+                # Bottom-left: align to bottom-left of monitor
+                gap_x=$((pos_x + gap_x))
+                gap_y=$((pos_y + height - conky_height - gap_y))
+                ;;
+            "bottom_right")
+                # Bottom-right: align to bottom-right of monitor
+                gap_x=$((pos_x + width - conky_width - gap_x))
+                gap_y=$((pos_y + height - conky_height - gap_y))
+                ;;
+            "center")
+                # Center: calculate center within the monitor
+                gap_x=$((pos_x + (width - conky_width) / 2))
+                gap_y=$((pos_y + (height - conky_height) / 2))
+                ;;
+        esac
+        
+        # Use top_left alignment with absolute positioning for multi-monitor
+        alignment="top_left"
     fi
     
     echo "$alignment:$gap_x:$gap_y"
