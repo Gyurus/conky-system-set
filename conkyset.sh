@@ -1,4 +1,15 @@
 #!/bin/bash
+
+# Resolve script directory (handles symlinks)
+# Use a more robust method that works with both direct execution and symlinks
+if [[ -L "$0" ]]; then
+    # Script is being run as a symlink, resolve it
+    SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+else
+    # Script is being run directly
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+fi
+
 # Usage/help function
 show_help() {
     echo "Usage: $(basename "$0") [options]"
@@ -114,11 +125,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Load modules early for update check
-source "$(dirname "$0")/modules/update.sh"
+source "$SCRIPT_DIR/modules/update.sh"
 
 # Handle quick location update mode
 if [ -n "$SET_LOCATION" ]; then
-    source "$(dirname "$0")/modules/weather.sh"
+    source "$SCRIPT_DIR/modules/weather.sh"
     CONFIG_FILE="$HOME/.config/conky/conky.conf"
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "❌ Config file not found: $CONFIG_FILE"
@@ -145,8 +156,8 @@ fi
 
 # Get current version for display
 get_current_version_for_display() {
-    if [[ -f "$(dirname "$0")/VERSION" ]]; then
-        cat "$(dirname "$0")/VERSION" | tr -d '\n'
+    if [[ -f "$SCRIPT_DIR/VERSION" ]]; then
+        cat "$SCRIPT_DIR/VERSION" | tr -d '\n'
     else
         echo "unknown"  # Fallback version
     fi
@@ -199,11 +210,11 @@ echo "🚀 Starting Conky setup and installation..."
 echo "════════════════════════════════════════════════"
 
 # Load modules
-source "$(dirname "$0")/modules/process.sh"
-source "$(dirname "$0")/modules/monitor.sh"
-source "$(dirname "$0")/modules/iface.sh"
-source "$(dirname "$0")/modules/weather.sh"
-source "$(dirname "$0")/modules/gpu.sh"
+source "$SCRIPT_DIR/modules/process.sh"
+source "$SCRIPT_DIR/modules/monitor.sh"
+source "$SCRIPT_DIR/modules/iface.sh"
+source "$SCRIPT_DIR/modules/weather.sh"
+source "$SCRIPT_DIR/modules/gpu.sh"
 # Note: update.sh is loaded earlier for --check-updates option
 
 # Kill any existing Conky processes
@@ -232,7 +243,7 @@ if [ -f "$HOME/.config/autostart/conky.desktop" ]; then
 fi
 
 # Check for existing installation files (will be overwritten)
-local found_existing=false
+found_existing=false
 for file in "$HOME/conkystartup.sh" "$HOME/rm-conkyset.sh" "$HOME/VERSION"; do
     if [ -f "$file" ]; then
         if [ "$found_existing" = false ]; then
@@ -272,9 +283,8 @@ echo "════════════════════════�
 # Check if Conky is installed and install if not
 echo "📦 Checking for Conky installation..."
 
-# Check if conkystartup.sh and rm-conkyset.sh are present in this directory and then copy them to the home directory
-echo "Checking for required scripts in the current directory..."
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Check if conkystartup.sh and rm-conkyset.sh are present in the script directory
+echo "Checking for required scripts in the script directory..."
 
 if [ ! -f "$SCRIPT_DIR/conkystartup.sh" ] || [ ! -f "$SCRIPT_DIR/rm-conkyset.sh" ]; then
     echo "Required scripts not found in the current directory. Please ensure conkystartup.sh and rm-conkyset.sh are present."
@@ -285,8 +295,21 @@ else
     # Only copy if we're not already in home directory
     if [ "$SCRIPT_DIR" != "$HOME" ]; then
         # Copy scripts to home directory
-        cp "$SCRIPT_DIR/conkystartup.sh" "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
-        cp "$SCRIPT_DIR/rm-conkyset.sh" "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
+        src_startup=$(readlink -f "$SCRIPT_DIR/conkystartup.sh" 2>/dev/null || echo "$SCRIPT_DIR/conkystartup.sh")
+        dst_startup=$(readlink -f "$HOME/conkystartup.sh" 2>/dev/null || echo "$HOME/conkystartup.sh")
+        if [ "$src_startup" != "$dst_startup" ]; then
+            cp "$SCRIPT_DIR/conkystartup.sh" "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
+        else
+            echo "conkystartup.sh already in home directory - skipping copy."
+        fi
+
+        src_remove=$(readlink -f "$SCRIPT_DIR/rm-conkyset.sh" 2>/dev/null || echo "$SCRIPT_DIR/rm-conkyset.sh")
+        dst_remove=$(readlink -f "$HOME/rm-conkyset.sh" 2>/dev/null || echo "$HOME/rm-conkyset.sh")
+        if [ "$src_remove" != "$dst_remove" ]; then
+            cp "$SCRIPT_DIR/rm-conkyset.sh" "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
+        else
+            echo "rm-conkyset.sh already in home directory - skipping copy."
+        fi
         
         # Copy modules directory for autoupdate functionality
         echo "Copying modules directory for autoupdate support..."
@@ -303,12 +326,12 @@ else
     fi
 fi
 
-# Check if conky.template.conf exists in this directory
-if [ ! -f "conky.template.conf" ]; then
-    echo "Conky template configuration file not found in the current directory. Please ensure conky.template.conf is present."
+# Check if conky.template.conf exists in the script directory
+if [ ! -f "$SCRIPT_DIR/conky.template.conf" ]; then
+    echo "Conky template configuration file not found in $SCRIPT_DIR. Please ensure conky.template.conf is present."
     exit 1
 else
-    echo "Conky template configuration file found in the current directory."
+    echo "Conky template configuration file found."
     # Create .config/conky directory if it doesn't exist
     mkdir -p "$HOME/.config/conky" || { echo "Failed to create .config/conky directory."; exit 1; }
 
@@ -539,7 +562,7 @@ else
         -e "s|@@ALIGNMENT@@|${ALIGNMENT_ESCAPED}|g" \
         -e "s|@@GAP_X@@|${GAP_X_ESCAPED}|g" \
         -e "s|@@GAP_Y@@|${GAP_Y_ESCAPED}|g" \
-        conky.template.conf > "$HOME/.config/conky/conky.conf" || { echo "Failed to create conky.conf with substitutions."; exit 1; }
+        "$SCRIPT_DIR/conky.template.conf" > "$HOME/.config/conky/conky.conf" || { echo "Failed to create conky.conf with substitutions."; exit 1; }
     # Ensure the Lua multiline string is properly closed in conky.conf
     # Check that the last line ends with ']];'
     if ! tail -n 1 "$HOME/.config/conky/conky.conf" | grep -qE '\]\];\s*$'; then

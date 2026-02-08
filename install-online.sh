@@ -4,16 +4,27 @@
 
 set -e  # Exit on error
 
-# Get version from VERSION file if available
+# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/VERSION" ]; then
-    INSTALLER_VERSION=$(cat "$SCRIPT_DIR/VERSION" | tr -d '\n')
-else
-    INSTALLER_VERSION="unknown"  # Fallback version
-fi
+
+# Default flags
+NONINTERACTIVE=false
+FULL_WIPE=false
+
+# Parse basic flags early (before tty handling)
+for arg in "$@"; do
+    case "$arg" in
+        -y|--yes|--noninteractive)
+            NONINTERACTIVE=true
+            ;;
+        --full-wipe|--wipe)
+            FULL_WIPE=true
+            ;;
+    esac
+done
 
 # Ensure we can read from terminal even when piped from curl
-if [ ! -t 0 ]; then
+if [ "$NONINTERACTIVE" != true ] && [ ! -t 0 ]; then
     exec < /dev/tty
 fi
 
@@ -26,7 +37,6 @@ GITHUB_RAW_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${B
 GITHUB_API_URL="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}"
 
 # Check if running from local repo (for testing)
-# SCRIPT_DIR already defined above for VERSION loading
 LOCAL_MODE=false
 if [ -f "$SCRIPT_DIR/conkyset.sh" ] && [ -f "$SCRIPT_DIR/conky.template.conf" ]; then
     LOCAL_MODE=true
@@ -79,6 +89,128 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Resolve installer version (local VERSION or remote VERSION/release)
+resolve_installer_version() {
+    local version=""
+
+    if [ "$LOCAL_MODE" = true ] && [ -f "$SCRIPT_DIR/VERSION" ]; then
+        version=$(tr -d '\n' < "$SCRIPT_DIR/VERSION")
+        echo "$version"
+        return
+    fi
+
+    if command -v curl >/dev/null 2>&1; then
+        version=$(curl -fsSL "$GITHUB_RAW_URL/VERSION" 2>/dev/null | tr -d '\n')
+    elif command -v wget >/dev/null 2>&1; then
+        version=$(wget -qO- "$GITHUB_RAW_URL/VERSION" 2>/dev/null | tr -d '\n')
+    fi
+
+    if [ -z "$version" ]; then
+        if command -v curl >/dev/null 2>&1; then
+            version=$(curl -fsSL "$GITHUB_API_URL/releases/latest" 2>/dev/null \
+                | grep -o '"tag_name":[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
+        elif command -v wget >/dev/null 2>&1; then
+            version=$(wget -qO- "$GITHUB_API_URL/releases/latest" 2>/dev/null \
+                | grep -o '"tag_name":[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
+        fi
+        version="${version#v}"
+    fi
+
+    if [ -z "$version" ]; then
+        version="unknown"
+    fi
+
+    echo "$version"
+}
+
+INSTALLER_VERSION=$(resolve_installer_version)
+
+# Prompt for top position preference (left/middle/right)
+prompt_position_choice() {
+    local choice
+    echo ""
+    echo "Choose top placement for Conky:"
+    echo "  1. Left top"
+    echo "  2. Middle top"
+    echo "  3. Right top"
+    echo -n "Choice [3]: "
+    read -r choice
+    case "$choice" in
+        1)
+            echo "top_left"
+            ;;
+        2)
+            # Map "middle top" to the closest supported position.
+            echo "center"
+            ;;
+        3|"")
+            echo "top_right"
+            ;;
+        *)
+            echo "top_right"
+            ;;
+    esac
+}
+
+# Prompt for monitor selection if multiple monitors are connected
+prompt_monitor_choice() {
+    if ! command_exists xrandr; then
+        return 0
+    fi
+
+    local -a monitor_names
+    local -a monitor_primary
+    local line name is_primary
+    while IFS= read -r line; do
+        name=$(echo "$line" | awk '{print $1}')
+        if echo "$line" | grep -q " primary "; then
+            is_primary="yes"
+        else
+            is_primary="no"
+        fi
+        monitor_names+=("$name")
+        monitor_primary+=("$is_primary")
+    done < <(xrandr --query | grep ' connected')
+
+    if [ "${#monitor_names[@]}" -le 1 ]; then
+        return 0
+    fi
+
+    echo ""
+    echo "Select monitor for Conky (multi-monitor detected):"
+    local default_choice=1
+    local i
+    for i in "${!monitor_names[@]}"; do
+        local label="$((i+1)). ${monitor_names[$i]}"
+        if [ "${monitor_primary[$i]}" = "yes" ]; then
+            label+=" (primary)"
+            default_choice=$((i+1))
+        fi
+        echo "  $label"
+    done
+    echo -n "Choice [${default_choice}]: "
+    read -r choice
+    if [[ "$choice" =~ ^[1-9][0-9]*$ ]] && [ "$choice" -le "${#monitor_names[@]}" ]; then
+        echo "${monitor_names[$((choice-1))]}"
+        return 0
+    fi
+    echo "${monitor_names[$((default_choice-1))]}"
+}
+
+# Build setup arguments for conkyset.sh
+configure_setup_preferences() {
+    SETUP_ARGS=()
+    local position monitor
+    position=$(prompt_position_choice)
+    if [ -n "$position" ]; then
+        SETUP_ARGS+=("--position" "$position")
+    fi
+    monitor=$(prompt_monitor_choice)
+    if [ -n "$monitor" ]; then
+        SETUP_ARGS+=("--monitor" "$monitor")
+    fi
+}
+
 # Check prerequisites
 check_prerequisites() {
     print_step "Checking prerequisites..."
@@ -118,8 +250,8 @@ download_file() {
     local output="$2"
     local description="${3:-file}"
     
-    # If in local mode, copy from local directory
-    if [ "$LOCAL_MODE" = true ]; then
+    # If in local mode, copy from local directory (skip API endpoints)
+    if [ "$LOCAL_MODE" = true ] && [[ "$url" != "$GITHUB_API_URL"* ]]; then
         local relative_path="${url##*/}"
         local local_file="$SCRIPT_DIR/$relative_path"
         
@@ -166,7 +298,7 @@ download_file() {
 
 # Get list of files from GitHub repository
 get_repo_files() {
-    print_step "Fetching repository file list..."
+    print_step "Fetching repository file list..." >&2
     
     local tree_url="${GITHUB_API_URL}/git/trees/${BRANCH}?recursive=1"
     local temp_file="/tmp/conky-repo-tree.json"
@@ -205,6 +337,7 @@ download_essential_files() {
         "conkystartup.sh"
         "rm-conkyset.sh"
         "conky.template.conf"
+        "VERSION"
         "README.md"
         "modules/update.sh"
         "modules/monitor.sh"
@@ -251,6 +384,10 @@ download_essential_files() {
 
 # Download all repository files (optional)
 download_all_files() {
+    if [ "$NONINTERACTIVE" = true ]; then
+        print_info "Skipping optional files (non-interactive mode)"
+        return 0
+    fi
     print_step "Would you like to download ALL files including tests and docs?"
     echo -n "This includes test scripts, documentation, etc. (y/N): "
     read -r download_all
@@ -288,6 +425,29 @@ download_all_files() {
     done <<< "$files"
     
     print_success "Downloaded $count additional files"
+}
+
+# Validate downloaded shell scripts for syntax errors
+validate_downloaded_scripts() {
+    print_step "Validating downloaded scripts..."
+
+    local failed=0
+    local file
+
+    while IFS= read -r -d '' file; do
+        if ! bash -n "$file" 2>/dev/null; then
+            print_error "Syntax check failed: $file"
+            failed=$((failed+1))
+        fi
+    done < <(find "$INSTALL_DIR" -type f -name "*.sh" -print0)
+
+    if [ "$failed" -gt 0 ]; then
+        print_error "Downloaded scripts failed validation. Please re-run the installer."
+        return 1
+    fi
+
+    print_success "Script validation passed"
+    return 0
 }
 
 # Make scripts executable
@@ -387,8 +547,12 @@ check_previous_installation() {
     done
     echo ""
     
-    echo -n "Remove previous installation and continue? (Y/n): "
-    read -r remove_prev
+    if [ "$NONINTERACTIVE" = true ]; then
+        remove_prev="y"
+    else
+        echo -n "Remove previous installation and continue? (Y/n): "
+        read -r remove_prev
+    fi
     
     if [[ "$remove_prev" =~ ^[Nn]$ ]]; then
         print_info "Installation cancelled"
@@ -429,8 +593,14 @@ check_previous_installation() {
     
     # Remove .config/conky directory (ask for confirmation)
     if [ -d "$HOME/.config/conky" ]; then
-        echo -n "   Remove configuration directory ~/.config/conky? (y/N): "
-        read -r remove_config
+        if [ "$FULL_WIPE" = true ]; then
+            remove_config="y"
+        elif [ "$NONINTERACTIVE" = true ]; then
+            remove_config="n"
+        else
+            echo -n "   Remove configuration directory ~/.config/conky? (y/N): "
+            read -r remove_config
+        fi
         if [[ "$remove_config" =~ ^[Yy]$ ]]; then
             rm -rf "$HOME/.config/conky" 2>/dev/null || true
             echo "   Configuration directory removed"
@@ -441,8 +611,14 @@ check_previous_installation() {
     
     # Remove old .conky directory (legacy)
     if [ -d "$HOME/.conky" ]; then
-        echo -n "   Remove old configuration directory ~/.conky? (y/N): "
-        read -r remove_old_config
+        if [ "$FULL_WIPE" = true ]; then
+            remove_old_config="y"
+        elif [ "$NONINTERACTIVE" = true ]; then
+            remove_old_config="n"
+        else
+            echo -n "   Remove old configuration directory ~/.conky? (y/N): "
+            read -r remove_old_config
+        fi
         if [[ "$remove_old_config" =~ ^[Yy]$ ]]; then
             rm -rf "$HOME/.conky" 2>/dev/null || true
             echo "   Old configuration directory removed"
@@ -472,6 +648,15 @@ check_previous_installation() {
 setup_home_links() {
     print_step "Setting up quick access..."
     
+    if [ "$NONINTERACTIVE" = true ]; then
+        print_info "Creating symlinks (non-interactive mode)"
+        ln -sf "$INSTALL_DIR/conkyset.sh" "$HOME/conkyset.sh"
+        ln -sf "$INSTALL_DIR/conkystartup.sh" "$HOME/conkystartup.sh"
+        ln -sf "$INSTALL_DIR/rm-conkyset.sh" "$HOME/rm-conkyset.sh"
+        print_success "Symlinks created in $HOME"
+        return
+    fi
+
     echo ""
     echo "How would you like to access the scripts?"
     echo "  1. Create symlinks in home directory (recommended)"
@@ -570,8 +755,12 @@ main() {
     # Check and clean previous installation
     check_previous_installation
     
-    echo -n "Continue with installation? (Y/n): "
-    read -r confirm
+    if [ "$NONINTERACTIVE" = true ]; then
+        confirm="y"
+    else
+        echo -n "Continue with installation? (Y/n): "
+        read -r confirm
+    fi
     if [[ "$confirm" =~ ^[Nn]$ ]]; then
         print_info "Installation cancelled"
         exit 0
@@ -595,6 +784,11 @@ main() {
     
     echo ""
     download_all_files
+
+    echo ""
+    if ! validate_downloaded_scripts; then
+        exit 1
+    fi
     
     echo ""
     set_permissions
@@ -606,15 +800,24 @@ main() {
     
     # Offer to run setup immediately
     echo ""
-    echo -n "Would you like to run the setup now? (y/N): "
-    read -r run_now
+    if [ "$NONINTERACTIVE" = true ]; then
+        run_now="n"
+    else
+        echo -n "Would you like to run the setup now? (y/N): "
+        read -r run_now
+    fi
     if [[ "$run_now" =~ ^[Yy]$ ]]; then
         echo ""
         print_info "Starting Conky setup..."
         echo ""
         # Change to installation directory so conkyset.sh can find required scripts
         cd "$INSTALL_DIR"
-        exec "./conkyset.sh"
+        configure_setup_preferences
+        if [ "${#SETUP_ARGS[@]}" -gt 0 ]; then
+            exec "./conkyset.sh" "${SETUP_ARGS[@]}"
+        else
+            exec "./conkyset.sh"
+        fi
     fi
     
     echo ""

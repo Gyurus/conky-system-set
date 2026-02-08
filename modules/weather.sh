@@ -144,7 +144,7 @@ update_weather_location_in_config() {
     escaped_location=$(printf '%s\n' "$new_location" | sed -e 's/[&\\|]/\\&/g')
     sed -i \
         -e "s|Weather: [^\$]*|Weather: ${escaped_location}|g" \
-        -e "s|wttr.in/[^?"']*|wttr.in/${escaped_location}|g" \
+        -e "s|wttr.in/[^?[:space:]\"]*|wttr.in/${escaped_location}|g" \
         -e "s|@@LOCATION@@|${escaped_location}|g" \
         "$config_file"
 }
