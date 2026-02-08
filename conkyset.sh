@@ -294,31 +294,41 @@ else
     
     # Only copy if we're not already in home directory
     if [ "$SCRIPT_DIR" != "$HOME" ]; then
-        # Copy scripts to home directory
-        src_startup=$(readlink -f "$SCRIPT_DIR/conkystartup.sh" 2>/dev/null || echo "$SCRIPT_DIR/conkystartup.sh")
-        dst_startup=$(readlink -f "$HOME/conkystartup.sh" 2>/dev/null || echo "$HOME/conkystartup.sh")
-        if [ "$src_startup" != "$dst_startup" ]; then
-            cp "$SCRIPT_DIR/conkystartup.sh" "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
-        else
-            echo "conkystartup.sh already in home directory - skipping copy."
+        # Copy scripts to home directory (if they exist in source)
+        if [ -f "$SCRIPT_DIR/conkystartup.sh" ]; then
+            src_startup=$(readlink -f "$SCRIPT_DIR/conkystartup.sh" 2>/dev/null || echo "$SCRIPT_DIR/conkystartup.sh")
+            dst_startup=$(readlink -f "$HOME/conkystartup.sh" 2>/dev/null || echo "$HOME/conkystartup.sh")
+            if [ "$src_startup" != "$dst_startup" ]; then
+                cp "$SCRIPT_DIR/conkystartup.sh" "$HOME/" || { echo "Failed to copy conkystartup.sh to home directory."; exit 1; }
+            else
+                echo "conkystartup.sh already in home directory - skipping copy."
+            fi
         fi
 
-        src_remove=$(readlink -f "$SCRIPT_DIR/rm-conkyset.sh" 2>/dev/null || echo "$SCRIPT_DIR/rm-conkyset.sh")
-        dst_remove=$(readlink -f "$HOME/rm-conkyset.sh" 2>/dev/null || echo "$HOME/rm-conkyset.sh")
-        if [ "$src_remove" != "$dst_remove" ]; then
-            cp "$SCRIPT_DIR/rm-conkyset.sh" "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
-        else
-            echo "rm-conkyset.sh already in home directory - skipping copy."
+        if [ -f "$SCRIPT_DIR/rm-conkyset.sh" ]; then
+            src_remove=$(readlink -f "$SCRIPT_DIR/rm-conkyset.sh" 2>/dev/null || echo "$SCRIPT_DIR/rm-conkyset.sh")
+            dst_remove=$(readlink -f "$HOME/rm-conkyset.sh" 2>/dev/null || echo "$HOME/rm-conkyset.sh")
+            if [ "$src_remove" != "$dst_remove" ]; then
+                cp "$SCRIPT_DIR/rm-conkyset.sh" "$HOME/" || { echo "Failed to copy rm-conkyset.sh to home directory."; exit 1; }
+            else
+                echo "rm-conkyset.sh already in home directory - skipping copy."
+            fi
         fi
         
-        # Copy modules directory for autoupdate functionality
-        echo "Copying modules directory for autoupdate support..."
-        mkdir -p "$HOME/modules" || { echo "Failed to create modules directory in home."; exit 1; }
-        cp -r "$SCRIPT_DIR/modules/"* "$HOME/modules/" || { echo "Failed to copy modules to home directory."; exit 1; }
+        # Copy modules directory for autoupdate functionality (if it exists)
+        if [ -d "$SCRIPT_DIR/modules" ]; then
+            echo "Copying modules directory for autoupdate support..."
+            mkdir -p "$HOME/modules" || { echo "Failed to create modules directory in home."; exit 1; }
+            cp -r "$SCRIPT_DIR/modules/"* "$HOME/modules/" || { echo "Failed to copy modules to home directory."; exit 1; }
+        fi
         
         # Copy VERSION file for version tracking
-        echo "Copying VERSION file..."
-        cp "$SCRIPT_DIR/VERSION" "$HOME/VERSION" || { echo "Failed to copy VERSION file to home directory."; exit 1; }
+        if [ -f "$SCRIPT_DIR/VERSION" ]; then
+            echo "Copying VERSION file..."
+            cp "$SCRIPT_DIR/VERSION" "$HOME/VERSION" || { echo "Failed to copy VERSION file to home directory."; exit 1; }
+        else
+            echo "⚠️  VERSION file not found in $SCRIPT_DIR (this is normal if running from installed location)."
+        fi
         
         echo "Scripts, modules, and VERSION file copied to home directory successfully."
     else
