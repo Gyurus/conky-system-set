@@ -1,22 +1,43 @@
 #!/bin/bash
 #Conky startup script
 sleep 5
-echo "Starting Conky setup..."
+
+# Set up logging for autostart debugging
+LOG_FILE="$HOME/.config/conky/startup.log"
+mkdir -p "$(dirname "$LOG_FILE")"
+exec > "$LOG_FILE" 2>&1
+echo "[$(date)] Starting Conky setup..."
+
+# Determine the installation directory
+# First, check if we're running from the installed location
+if [ -d "$HOME/.conky-system-set" ]; then
+    INSTALL_DIR="$HOME/.conky-system-set"
+    echo "[$(date)] Using installed directory: $INSTALL_DIR"
+else
+    # Fall back to relative path (for development)
+    INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    echo "[$(date)] Using relative path directory: $INSTALL_DIR"
+fi
 
 # Load update module for autoupdate functionality
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/modules/update.sh" ]; then
-    source "$SCRIPT_DIR/modules/update.sh"
+if [ -f "$INSTALL_DIR/modules/update.sh" ]; then
+    source "$INSTALL_DIR/modules/update.sh"
+    echo "[$(date)] Loaded update module"
     
     # Check for updates and auto-update if enabled
-    echo "🔍 Checking for automatic updates..."
+    echo "[$(date)] Checking for automatic updates..."
     check_and_autoupdate "false"
     echo ""
+else
+    echo "[$(date)] WARNING: Update module not found at $INSTALL_DIR/modules/update.sh"
 fi
 
 # Load weather helpers for location updates
-if [ -f "$SCRIPT_DIR/modules/weather.sh" ]; then
-    source "$SCRIPT_DIR/modules/weather.sh"
+if [ -f "$INSTALL_DIR/modules/weather.sh" ]; then
+    source "$INSTALL_DIR/modules/weather.sh"
+    echo "[$(date)] Loaded weather module"
+else
+    echo "[$(date)] WARNING: Weather module not found at $INSTALL_DIR/modules/weather.sh"
 fi
 
 # Detect active interface: prefer Ethernet, fallback to Wi-Fi
@@ -24,6 +45,7 @@ iface=$(ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {print $5; exit}')
 [ -z "$iface" ] && iface=$(nmcli device status | awk '$3 == "connected" && $2 == "wifi" {print $1; exit}')
 [ -z "$iface" ] && iface=$(nmcli device status | awk '$3 == "connected" {print $1; exit}')
 [ -z "$iface" ] && iface="enp7s0"  # final fallback: replace "enp7s0" with your actual network interface name if different
+echo "[$(date)] Detected network interface: $iface"
 
 # Save the interface
 mkdir -p "$HOME/.config/conky"
@@ -31,9 +53,10 @@ echo "$iface" > "$HOME/.config/conky/.conky_iface"
 
 # Replace @@IFACE@@ in conky.conf
 if [ ! -f "$HOME/.config/conky/conky.conf" ]; then
-    echo "Error: Configuration file $HOME/.config/conky/conky.conf not found."
+    echo "[$(date)] ERROR: Configuration file $HOME/.config/conky/conky.conf not found."
     exit 1
 fi
+echo "[$(date)] Found conky.conf, proceeding with updates..."
 
 # Update weather location from saved preference (supports auto mode)
 if [ -f "$HOME/.config/conky/.conky_location" ]; then
@@ -100,10 +123,13 @@ if grep -q "@@GPU_TEMP_COMMAND@@" "$HOME/.config/conky/conky.conf"; then
 fi
 
 # Launch Conky with final config in background
-echo "🚀 Starting Conky in background..."
-conky -c "$HOME/.config/conky/conky.conf" &
-conky_pid=$!
-echo "✅ Conky started successfully (PID: $conky_pid)"
-echo "💡 Conky is now running in the background"
-echo "🔍 To check if Conky is running: pgrep conky"
-echo "🛑 To stop Conky: pkill conky"
+echo "[$(date)] 🚀 Starting Conky in background..."
+if command -v conky >/dev/null 2>&1; then
+    conky -c "$HOME/.config/conky/conky.conf" &
+    conky_pid=$!
+    echo "[$(date)] ✅ Conky started successfully (PID: $conky_pid)"
+    echo "[$(date)] 💡 Conky is now running in the background"
+else
+    echo "[$(date)] ERROR: Conky command not found. Is it installed?"
+    exit 1
+fi
