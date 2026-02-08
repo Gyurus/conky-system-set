@@ -258,6 +258,10 @@ EOF
     for file in \
         "$HOME/.config/conky/conky.conf" \
         "$HOME/.config/conky/.conky_iface" \
+        "$HOME/.config/conky/.monitor_snapshot" \
+        "$HOME/.config/conky/.monitor_preference" \
+        "$HOME/.config/conky/.monitor_state" \
+        "$HOME/.config/conky/.conky_location" \
         "$HOME/.config/autostart/conky.desktop" \
         "$HOME/conkystartup.sh" \
         "$HOME/rm-conkyset.sh"; do
@@ -274,9 +278,16 @@ EOF
 show_removal_summary() {
     echo ""
     echo "🗑️  Files and directories to be processed:"
-    echo "   Configuration:"
+    echo "   Installation Directory:"
+    echo "   • ~/.conky-system-set/ (main installation directory)"
+    echo ""
+    echo "   Configuration & Cache:"
     echo "   • ~/.config/conky/conky.conf"
     echo "   • ~/.config/conky/.conky_iface"
+    echo "   • ~/.config/conky/.monitor_snapshot (monitor layout cache)"
+    echo "   • ~/.config/conky/.monitor_preference (position preference)"
+    echo "   • ~/.config/conky/.monitor_state (monitor state tracking)"
+    echo "   • ~/.config/conky/.conky_location (weather location cache)"
     echo "   • ~/.config/conky/ (if empty or contains only conky files)"
     echo ""
     echo "   Autostart:"
@@ -286,9 +297,6 @@ show_removal_summary() {
     echo "   Scripts:"
     echo "   • ~/conkystartup.sh"
     echo "   • ~/rm-conkyset.sh (this script)"
-    echo ""
-    echo "   Modules (autoupdate support):"
-    echo "   • ~/modules/ directory"
     echo ""
     echo "   Update System:"
     echo "   • ~/.conky-system-set-skip-version"
@@ -422,16 +430,24 @@ echo ""
 # Remove files with error checking
 removal_errors=0
 
-echo "📁 Processing configuration files..."
+echo "� Processing installation directory..."
+safe_remove_dir "$HOME/.conky-system-set" "Main installation directory" || ((removal_errors++))
+
+echo ""
+echo "📁 Processing configuration and cache files..."
 safe_remove "$HOME/.config/conky/conky.conf" "Main configuration file" || ((removal_errors++))
 safe_remove "$HOME/.config/conky/.conky_iface" "Interface cache file" || ((removal_errors++))
+safe_remove "$HOME/.config/conky/.monitor_snapshot" "Monitor snapshot cache" || ((removal_errors++))
+safe_remove "$HOME/.config/conky/.monitor_preference" "Monitor position preference" || ((removal_errors++))
+safe_remove "$HOME/.config/conky/.monitor_state" "Monitor state tracking" || ((removal_errors++))
+safe_remove "$HOME/.config/conky/.conky_location" "Weather location cache" || ((removal_errors++))
 
 echo ""
 echo "📂 Processing directories..."
 safe_remove_dir "$HOME/.config/conky" "Conky config directory"
 
 echo ""
-echo "� Processing autostart entries..."
+echo "🔗 Processing autostart entries..."
 safe_remove "$HOME/.config/autostart/conky.desktop" "Autostart entry" || ((removal_errors++))
 
 echo ""
@@ -439,11 +455,7 @@ echo "📜 Processing scripts..."
 safe_remove "$HOME/conkystartup.sh" "Startup script" || ((removal_errors++))
 
 echo ""
-echo "� Processing modules directory..."
-safe_remove_dir "$HOME/modules" "Modules directory (autoupdate support)"
-
-echo ""
-echo "�🔧 Processing update system files..."
+echo "⚙️  Processing update system files..."
 safe_remove "$HOME/.conky-system-set-skip-version" "Update skip version file" || ((removal_errors++))
 safe_remove "$HOME/.conky-system-set-last-check" "Update check timestamp file" || ((removal_errors++))
 safe_remove "$HOME/.conky-system-set-update-config" "Update configuration file" || ((removal_errors++))
