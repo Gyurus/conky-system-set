@@ -5,6 +5,42 @@ All notable changes to Conky System Set are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-02-08
+
+### Fixed
+- **Critical Bug**: Fixed SCRIPT_DIR resolution when conkyset.sh executed via symlink
+  - Symlinks in home directory now correctly resolve to actual installation path
+  - All module sourcing now works when running ~/conkyset.sh
+  - Resolves "command not found" errors when running setup from symlink
+
+### Added
+- **Unattended Installation Mode**: New flags for automation
+  - `--yes` flag: Automatically answer yes to all prompts
+  - `--full-wipe` flag: Remove previous config without asking
+  - Enables CI/CD and scripted deployments
+
+- **Script Validation**: Prevents installation of broken downloads
+  - All downloaded shell scripts validated with `bash -n` syntax check
+  - Installation fails immediately if syntax errors detected
+  - Provides clear error messaging for debugging
+
+### Changed
+- **Improved Version Resolution**: Better remote version detection
+  - Reads VERSION from GitHub raw content
+  - Falls back to GitHub API releases latest tag
+  - Ensures accurate version display in online installer
+
+### Technical Details
+- **Symlink Resolution**: Uses `readlink -f` with symlink detection
+  ```bash
+  if [[ -L "$0" ]]; then
+      SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+  else
+      SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  fi
+  ```
+- **Files Modified**: conkyset.sh (symlink fix), install-online.sh (validation, flags, version resolution), conky.template.conf, modules/weather.sh
+
 ## [1.8.5] - 2025-10-07
 
 ### Fixed
