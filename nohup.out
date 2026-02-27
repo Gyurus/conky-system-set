@@ -1,0 +1,12 @@
+conky: desktop window (2200010) is subwindow of root window (8f9)
+conky: window type - desktop
+conky: drawing to created window (0x3400002)
+conky: drawing to double buffer
+conky: forked to background, pid is 221894
+
+sh: 1: Syntax error: Unterminated quoted string
+sh: 1: Syntax error: Unterminated quoted string
+sh: 1: Syntax error: Unterminated quoted string
+sh: 1: Syntax error: Unterminated quoted string
+sh: 1: Syntax error: Unterminated quoted string
+conky: received SIGHUP, SIGINT, or SIGTERM to terminate. bye!

@@ -1165,6 +1165,47 @@ if [ "$SKIP_SENSOR" = false ] && ! command -v sensors >/dev/null 2>&1; then
     echo ""
 fi
 
+# AnsiWeather Installation (for weather display)
+if ! command -v ansiweather &> /dev/null; then
+    echo "🌡️  AnsiWeather not found. Installing dependencies and ansiweather..."
+    
+    # Install Python3 and pip if not present
+    if ! command -v python3 &> /dev/null; then
+        echo "   📦 Installing Python3..."
+        if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y python3 python3-pip || echo "⚠️  Failed to install Python3"
+        elif command -v pacman &> /dev/null; then
+            sudo pacman -S python python-pip || echo "⚠️  Failed to install Python3"
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y python3 python3-pip || echo "⚠️  Failed to install Python3"
+        fi
+    fi
+    
+    # Install ansiweather
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update && sudo apt-get install -y ansiweather || {
+            echo "   ℹ️  Attempting pip3 install..."
+            pip3 install ansiweather || echo "⚠️  Failed to install ansiweather"
+        }
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -S ansiweather || {
+            echo "   ℹ️  Attempting pip install..."
+            pip install ansiweather || echo "⚠️  Failed to install ansiweather"
+        }
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y ansiweather || {
+            echo "   ℹ️  Attempting pip3 install..."
+            pip3 install ansiweather || echo "⚠️  Failed to install ansiweather"
+        }
+    else
+        echo "   ℹ️  Using pip3 to install ansiweather..."
+        pip3 install ansiweather || echo "⚠️  Failed to install ansiweather via pip3"
+    fi
+else
+    echo "✅ AnsiWeather is already installed."
+fi
+echo ""
+
 # Desktop Environment Detection and Autostart Creation
 echo "🔍 Detecting desktop environment..."
 DESKTOP_ENV=""
