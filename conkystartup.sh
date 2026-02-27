@@ -63,6 +63,13 @@ else
     echo "[$(date)] WARNING: Weather module not found at $INSTALL_DIR/modules/weather.sh"
 fi
 
+# Create location file with auto-detection if it doesn't exist
+if [ ! -f "$HOME/.config/conky/.conky_location" ]; then
+    echo "[$(date)] Creating location file with auto-detection enabled..."
+    mkdir -p "$HOME/.config/conky"
+    echo "auto" > "$HOME/.config/conky/.conky_location"
+fi
+
 # Check for monitor changes and adjust Conky if needed
 if [ -f "$HOME/.config/conky/conky.conf" ]; then
     echo "[$(date)] Checking for monitor layout changes..."
@@ -100,22 +107,34 @@ fi
 echo "[$(date)] Found conky.conf, proceeding with updates..."
 
 # Update weather location from saved preference (supports auto mode)
+echo "[$(date)] Checking weather location preferences..."
 if [ -f "$HOME/.config/conky/.conky_location" ]; then
     saved_location=$(tr -d '\n' < "$HOME/.config/conky/.conky_location")
+    echo "[$(date)] Saved location preference: $saved_location"
     if [ -n "$saved_location" ] && command -v detect_weather_location >/dev/null 2>&1; then
         if [[ "$saved_location" =~ ^[Aa][Uu][Tt][Oo]$ ]]; then
+            echo "[$(date)] 🌐 Auto-detecting weather location..."
             resolved_location=$(detect_weather_location)
-            echo "🌐 Auto-detected weather location: $resolved_location"
+            echo "[$(date)] ✅ Auto-detected weather location: $resolved_location"
         else
             resolved_location="$saved_location"
+            echo "[$(date)] Using saved location: $resolved_location"
         fi
         update_weather_location_in_config "$HOME/.config/conky/conky.conf" "$resolved_location"
+        echo "[$(date)] ✅ Weather location updated in config"
         if check_weather_location "$resolved_location"; then
-            echo "✅ Weather location check passed"
+            echo "[$(date)] ✅ Weather location validation passed"
         else
-            echo "⚠️  Weather check failed for '$resolved_location'"
+            echo "[$(date)] ⚠️  Weather location validation failed for '$resolved_location', but continuing..."
         fi
     fi
+else
+    echo "[$(date)] No location preference file found, setting to auto-detect..."
+    mkdir -p "$HOME/.config/conky"
+    echo "auto" > "$HOME/.config/conky/.conky_location"
+    resolved_location=$(detect_weather_location)
+    echo "[$(date)] ✅ Auto-detected weather location: $resolved_location"
+    update_weather_location_in_config "$HOME/.config/conky/conky.conf" "$resolved_location"
 fi
 sed -i "s|@@IFACE@@|$iface|g" "$HOME/.config/conky/conky.conf"
 

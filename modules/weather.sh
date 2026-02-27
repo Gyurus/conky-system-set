@@ -141,20 +141,12 @@ update_weather_location_in_config() {
         return 1
     fi
     local escaped_location
-    # Escape for sed substitution
+    # Escape for sed substitution (for display text)
     escaped_location=$(printf '%s\n' "$new_location" | sed -e 's/[&\\|]/\\&/g')
     
-    # URL-encode the location for wttr.in API calls
-    # Replace spaces with + and encode special characters
-    local url_encoded_location
-    url_encoded_location=$(printf '%s' "$new_location" | jq -sRr @uri | sed 's/%20/+/g')
-    if [ -z "$url_encoded_location" ]; then
-        # Fallback if jq is not available: simple sed-based encoding
-        url_encoded_location=$(printf '%s' "$new_location" | sed 's/ /+/g; s/,/%2C/g; s/á/a/g; s/é/e/g; s/í/i/g; s/ó/o/g; s/ú/u/g')
-    fi
-    
+    # Update weather location display and ansiweather commands
     sed -i \
         -e "s|Weather: [^\$]*|Weather: ${escaped_location}|g" \
-        -e "s|wttr.in/[^?[:space:]\"]*|wttr.in/${url_encoded_location}|g" \
+        -e "s|ansiweather -l [^ ]*|ansiweather -l ${escaped_location}|g" \
         "$config_file"
 }

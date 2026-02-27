@@ -33,7 +33,7 @@ show_help() {
 # Default flags
 NONINTERACTIVE=false
 SKIP_GPU=false
-AUTO_LOCATION=false
+AUTO_LOCATION=true
 SET_LOCATION=""
 SKIP_SENSOR=false
 POSITION_PREFERENCE="top_right"
