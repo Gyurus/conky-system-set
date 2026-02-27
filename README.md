@@ -1,4 +1,4 @@
-# Conky System Set v2.0.16
+# Conky System Set v2.0.17
 
 A comprehensive and visually clean Conky setup for monitoring your system in real time. Features auto-configuration, enhanced system monitoring, weather integration, **multi-monitor support with intelligent positioning**, complete setup automation, and **one-command online installation**.
 
